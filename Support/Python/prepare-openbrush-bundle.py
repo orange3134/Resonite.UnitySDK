@@ -25,6 +25,7 @@ PARTICLES = {DOTS, '0eb4db27-3f82-408d-b5a1-19ebd7d5b711',
              'd902ed8b-d0d1-476c-a8de-878a79e3a34c',
              '89d104cd-d012-426b-b5b3-bbaee63ac43c',
              'a8147ce1-005e-abe4-88e8-09a1eaadcc89'}
+BUBBLEWAND = 'eba3f993-f9a1-4d35-b84e-bb08f48981a4'
 KEIJIRO = 'f8ba3d18-01fc-4d7b-b2d9-b99d10b8e7cf'
 DISCO = '4391aaaa-df73-4396-9e33-31e4e4930b27'
 ELECTRICITY = 'f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51'
@@ -116,6 +117,12 @@ def prepare(source, destination, *, sdk_root=SDK, speed=1., lead=1., hold=3.,
         if progress:
             progress('ブラシ効果を抽出中', 0, 0)
         # Extract raw records BEFORE slicing or any static deformation.
+        if '6a1cf9f9-032c-45ec-9b6e-a6680bee30f7' in brushes:
+            files['waveformparticles'] = 'waveformparticles.json'
+            load('extract-waveform-particles').extract(source, stage / files['waveformparticles'], HERE / 'animate-brush-glb.py')
+        if BUBBLEWAND in brushes:
+            files['bubblewand'] = 'bubblewand.json'
+            load('extract-bubblewand-motion').extract(source, stage / files['bubblewand'], HERE / 'animate-brush-glb.py')
         if KEIJIRO in brushes:
             files['keijiro'] = 'keijiro.json'
             load('extract-keijiro-motion').extract(source, stage / files['keijiro'], HERE / 'animate-brush-glb.py')

@@ -18,6 +18,27 @@ public static class OpenBrushProfiles
         public Profile(string guid, string name) { Guid = guid; Name = name; }
     }
     public static readonly Profile[] All = {
+        new Profile("0f5820df-cb6b-4a6c-960e-56e4c8000eda","WaveformTube") { Unlit=true, Additive=true },
+        new Profile("6a1cf9f9-032c-45ec-9b6e-a6680bee30f7","WaveformParticles") { Unlit=true, Additive=true },
+        // Exact normal m_Material matches, audited by GUID. Retain exported geometry;
+        // SingleSided in a descriptor name does not override the shader culling.
+        new Profile("280c0a7a-aad8-416c-a7d2-df63d129ca70","FlatSingleSided") { LinearVertexColors=true, SpecularModel=true },
+        new Profile("3ca16e2f-bdcd-4da2-8631-dcef342f40f1","DuctTapeSingleSided") { LinearVertexColors=true, Cutout=true, Cutoff=.2f, Smoothness=.414f, Tint=.7019608f },
+        new Profile("4465b5ef-3605-bec4-2b3e-6b04508ddb6b","GouacheSingleSided") { LinearVertexColors=true, SpecularModel=true, Cutout=true, Cutoff=.5f, Smoothness=.01f, DiffuseGain=1.5f },
+        new Profile("4f48a0b1-3f88-c0b4-b9e3-c7ceea47d00b","OilPaintGeometry") { LinearVertexColors=true, Cutout=true, Cutoff=.5f, Smoothness=.4f },
+        new Profile("66ec961b-e5ea-5464-4a97-c601ac31047c","MarkerGeometry") { Unlit=true, Cutout=true, Cutoff=.067f },
+        new Profile("759f1ebd-20cd-4720-8d41-234e0da63716","PaperSingleSided") { LinearVertexColors=true, Cutout=true, Cutoff=.16f, Smoothness=.145f },
+        new Profile("79168f10-6961-464a-8be1-57ed364c5600","CoarseBristlesSingleSided") { LinearVertexColors=true, SpecularModel=true, Cutout=true, Cutoff=.25f },
+        new Profile("7a1c8107-50c5-4b70-9a39-421576d6617e","SplatterSingleSided") { Cutout=true, Cutoff=.2f },
+        new Profile("c0012095-3ffd-4040-8ee1-fc180d346eaa","InkSingleSided") { LinearVertexColors=true, Cutout=true, Cutoff=.5f, Smoothness=.263f },
+        new Profile("c515dad7-4393-4681-81ad-162ef052241b","OilPaintSingleSided") { LinearVertexColors=true, Cutout=true, Cutoff=.5f, Smoothness=.4f },
+        new Profile("c8c352e1-593f-1b94-1869-6896e28a4184","PaperGeometry") { LinearVertexColors=true, Cutout=true, Cutoff=.16f, Smoothness=.145f },
+        new Profile("c8ccb53d-ae13-45ef-8afb-b730d81394eb","TaperedFlatSingleSided") { LinearVertexColors=true, SpecularModel=true, Cutout=true, Cutoff=.067f },
+        new Profile("dea67637-cd1a-27e4-c9b1-52f4bbcb84e5","WetPaintSingleSided") { LinearVertexColors=true, Cutout=true, Cutoff=.3f, Smoothness=.85f },
+        new Profile("e814fef1-97fd-7194-4a2f-50c2bb918be2","WigglyGraphiteSingleSided") { Cutout=true, LinearVertexColors=true, SpecularModel=true },
+        new Profile("ec4fa4d9-212e-df34-0afb-99330c2392d6","TaperedMarkerGeometry") { LinearVertexColors=true, SpecularModel=true, SingleSided=true, IgnoreAlbedoTexture=true },
+        new Profile("fdf0326a-c0d1-4fed-b101-9db0ff6d071f","ThickPaintSingleSided") { LinearVertexColors=true, Cutout=true, Cutoff=.5f, Smoothness=.4f },
+        new Profile("d120944d-772f-4062-99c6-46a6f219eeaf","WaveformFFT") { Unlit=true, Additive=true, IgnoreAlbedoTexture=true },
         // Normal graph uses _Specular (black), not legacy _SpecColor.
         new Profile("f8ba3d18-01fc-4d7b-b2d9-b99d10b8e7cf","KeijiroTube") { LinearVertexColors=true, SpecularModel=true, SingleSided=true, Smoothness=.432f, IgnoreAlbedoTexture=true, DiffuseGain=1.5f },
         new Profile("8d1510b2-1fc5-4c90-8db7-4c07eecfd849","Slice") { Unlit=true, Transparent=true, IgnoreAlbedoTexture=true },
@@ -105,6 +126,7 @@ public static class OpenBrushProfiles
         new Profile("d229d335-c334-495a-a801-660ac8a87360","VelvetInk") { Unlit=true, Additive=true },
         new Profile("d9cc5e99-ace1-4d12-96e0-4a7c18c99cfc","Fairy") { Unlit=true, Additive=true, IgnoreAlbedoTexture=true },
         new Profile("bdf65db2-1fb7-4202-b5e0-c6b5e3ea851e","Space") { Unlit=true, Additive=true, IgnoreAlbedoTexture=true },
+        new Profile("eba3f993-f9a1-4d35-b84e-bb08f48981a4","BubbleWand") { SpecularModel=true, Specular=.6f, SpecularIsLinear=true, Smoothness=.9f },
         new Profile("a8147ce1-005e-abe4-88e8-09a1eaadcc89","Rising Bubbles") { Unlit=true, Additive=true },
         new Profile("89d104cd-d012-426b-b5b3-bbaee63ac43c","Bubbles") { Unlit=true, Additive=true },
         new Profile("d902ed8b-d0d1-476c-a8de-878a79e3a34c","Snow") { Unlit=true, Additive=true },

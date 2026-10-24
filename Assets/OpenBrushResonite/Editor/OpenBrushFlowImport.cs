@@ -19,7 +19,7 @@ public static class OpenBrushFlowImport {
  public const int Width=128,Height=128,Padding=2,Fps=30;
  public static bool Supports(string guid)=>guid==Plasma || guid==Streamers || guid==ChromaticWave || guid==Rainbow || guid==Wind || guid==Rain || guid==Fire2 || guid==Sparks || guid==Fairy || guid==Space;
  static int Range(string guid)=>guid==Fairy || guid==Space?2:guid==Fire2 || guid==Sparks?1:0;
- sealed class Piece { public MeshRenderer renderer;public Mesh mesh;public int[] indices;public float[] copies;public Vector4[] bloom;public Mesh chart; }
+ sealed class Piece { public MeshRenderer renderer;public Mesh mesh;public int[] indices;public float[] copies;public Vector4[] bloom;public Mesh chart;public Vector2[] chartUV;public bool ownsMesh; }
  sealed class Chart {public string key,guid;public List<Piece> pieces=new List<Piece>();public Vector2 min,max;public Vector2 origin,size;public Texture2D pattern,displacement;}
  static string Key(params float[] f)=>string.Join(",",f.Select(x=>x.ToString("R",CultureInfo.InvariantCulture)));
  static Piece Read(MeshRenderer r) {
@@ -36,6 +36,27 @@ public static class OpenBrushFlowImport {
    if(!unique.TryGetValue(key,out var list)){list=new List<int[]>();unique.Add(key,list);}list.Add(t);
   }
   return new Piece{renderer=r,mesh=mesh,bloom=bloom,indices=unique.Values.SelectMany(v=>v[0]).ToArray(),copies=unique.Values.Select(v=>(float)v.Count).ToArray()};
+ }
+ // A short stroke can have constant source U yet nonzero geometric area.
+ // Give each such face a barycentric bake domain; shader UV/RGBA remain original.
+ static void ExpandDegenerateCharts(Dictionary<string,Chart> charts) {
+  foreach(var chart in charts.Values.ToArray()) {
+   var uv=chart.pieces.SelectMany(p=>p.mesh.uv).ToArray();
+   if(uv.Max(v=>v.x)-uv.Min(v=>v.x)>=1e-6f && uv.Max(v=>v.y)-uv.Min(v=>v.y)>=1e-6f)continue;
+   charts.Remove(chart.key);int face=0;
+   foreach(var p in chart.pieces) {
+    var pos=p.mesh.vertices;var normals=p.mesh.normals;var tangents=p.mesh.tangents;var sourceUV=p.mesh.uv;var colors=p.mesh.colors;
+    for(int i=0;i<p.indices.Length;i+=3) {
+     var ids=new[]{p.indices[i],p.indices[i+1],p.indices[i+2]};
+     var mesh=new Mesh{name=p.mesh.name+"_FaceChart",vertices=ids.Select(v=>pos[v]).ToArray(),uv=ids.Select(v=>sourceUV[v]).ToArray(),colors=ids.Select(v=>colors[v]).ToArray(),triangles=new[]{0,1,2}};
+     if(normals.Length==pos.Length)mesh.normals=ids.Select(v=>normals[v]).ToArray();
+     if(tangents.Length==pos.Length)mesh.tangents=ids.Select(v=>tangents[v]).ToArray();
+     var piece=new Piece{renderer=p.renderer,mesh=mesh,ownsMesh=true,indices=new[]{0,1,2},copies=new[]{p.copies[i/3]},bloom=ids.Select(v=>p.bloom[v]).ToArray(),chartUV=new[]{Vector2.zero,Vector2.right,Vector2.up}};
+     string key=chart.key+"_uvface_"+face++;
+     charts.Add(key,new Chart{key=key,guid=chart.guid,pieces=new List<Piece>{piece}});
+    }
+   }
+  }
  }
  public const float StreamersCeiling=4;
  // Resonite bloom spreads raw source HDR excessively. This display ceiling
@@ -75,6 +96,7 @@ public static class OpenBrushFlowImport {
    if(chart.guid!=guid || r.sharedMaterial.mainTextureScale!=Vector2.one || r.sharedMaterial.mainTextureOffset!=Vector2.zero)throw new InvalidOperationException("Ambiguous flow chart or unsupported source UV transform");
    chart.pieces.Add(Read(r));
   }
+  ExpandDegenerateCharts(charts);
   int columns=Mathf.CeilToInt(Mathf.Sqrt(charts.Count)),rows=Mathf.CeilToInt(charts.Count/(float)columns);
   if(resolutionScale<1 || resolutionScale>8)throw new ArgumentOutOfRangeException(nameof(resolutionScale));
   if(float.IsNaN(streamersCeiling) || streamersCeiling<1 || streamersCeiling>16)throw new ArgumentOutOfRangeException(nameof(streamersCeiling));
@@ -93,7 +115,7 @@ public static class OpenBrushFlowImport {
   try {
    rt.Create();
    foreach(var chart in charts.Values) {
-    var uvs=chart.pieces.SelectMany(p=>p.mesh.uv).ToArray();chart.min=new Vector2(uvs.Min(u=>u.x),uvs.Min(u=>u.y));chart.max=new Vector2(uvs.Max(u=>u.x),uvs.Max(u=>u.y));
+    var uvs=chart.pieces.SelectMany(p=>p.chartUV ?? p.mesh.uv).ToArray();chart.min=new Vector2(uvs.Min(u=>u.x),uvs.Min(u=>u.y));chart.max=new Vector2(uvs.Max(u=>u.x),uvs.Max(u=>u.y));
     if(chart.max.x-chart.min.x<1e-6 || chart.max.y-chart.min.y<1e-6)throw new InvalidOperationException("Degenerate flow UV chart");
     chart.size=new Vector2(layout.TileWidth,layout.TileHeight);chart.origin=new Vector2((chartIndex%columns)*(layout.TileWidth+2*Padding)+Padding,(chartIndex/columns)*(layout.TileHeight+2*Padding)+Padding);chartIndex++;
     chart.pattern=new Texture2D(2,2,TextureFormat.RGBA32,false,true){wrapMode=TextureWrapMode.Repeat,filterMode=FilterMode.Bilinear};
@@ -104,7 +126,7 @@ public static class OpenBrushFlowImport {
     }
     foreach(var piece in chart.pieces) {
      var uv=piece.mesh.uv;var colors=piece.mesh.colors;var pos=new Vector3[piece.indices.Length];var srcUv=new Vector2[pos.Length];var copies=new Vector2[pos.Length];var rgba=new Color[pos.Length];var bloom=new Vector4[pos.Length];
-     for(int i=0;i<pos.Length;i++) {int v=piece.indices[i];var q=AtlasUV(chart,uv[v],width,height);pos[i]=new Vector3(q.x,q.y,0);srcUv[i]=uv[v];rgba[i]=colors[v];copies[i]=new Vector2(piece.copies[i/3],0);bloom[i]=piece.bloom[v];}
+     for(int i=0;i<pos.Length;i++) {int v=piece.indices[i];var q=AtlasUV(chart,piece.chartUV==null?uv[v]:piece.chartUV[v],width,height);pos[i]=new Vector3(q.x,q.y,0);srcUv[i]=uv[v];rgba[i]=colors[v];copies[i]=new Vector2(piece.copies[i/3],0);bloom[i]=piece.bloom[v];}
      piece.chart=new Mesh{indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,vertices=pos,uv=srcUv,uv2=copies,colors=rgba,triangles=Enumerable.Range(0,pos.Length).ToArray()};
      piece.chart.SetUVs(2,bloom);
     }
@@ -129,8 +151,9 @@ public static class OpenBrushFlowImport {
   var motion=driver.AddComponent<OpenBrushTextureMotion>();motion.SourceMaterial=material;motion.Frames=frames;motion.FramesPerSecond=fps;motion.Timeline=timeline;motion.FrameTimes=times;
   foreach(var chart in charts.Values)foreach(var piece in chart.pieces) {
    var mesh=UnityEngine.Object.Instantiate(piece.mesh);mesh.name=piece.mesh.name+"_FlowChart";mesh.triangles=piece.indices;
-   mesh.uv=mesh.uv.Select(u=>AtlasUV(chart,u,width,height)).ToArray();mesh.colors=Enumerable.Repeat(Color.white,mesh.vertexCount).ToArray();
+   mesh.uv=(piece.chartUV ?? mesh.uv).Select(u=>AtlasUV(chart,u,width,height)).ToArray();mesh.colors=Enumerable.Repeat(Color.white,mesh.vertexCount).ToArray();
    var child=new GameObject("Timed Flow Fragments");child.transform.SetParent(piece.renderer.transform,false);child.AddComponent<MeshFilter>().sharedMesh=mesh;child.AddComponent<MeshRenderer>().sharedMaterial=material;piece.renderer.enabled=false;
+   if(piece.ownsMesh)UnityEngine.Object.DestroyImmediate(piece.mesh);
   }
   Debug.Log("FLOW_BAKE charts="+charts.Count+" frames="+count+" atlas="+textureWidth+"x"+textureHeight+" duration="+timeline.Duration);
  }

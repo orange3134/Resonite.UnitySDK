@@ -30,6 +30,17 @@ class MylarTests(unittest.TestCase):
         for k in [1,2]:np.testing.assert_array_equal(r.cache[k],original[k])
         once=r.cache[0].copy();animation.bake_static_brush_geometry(r)
         np.testing.assert_array_equal(r.cache[0],once)
+    def test_independent_strokes_with_different_radii_and_centers(self):
+        r=fixture();count=len(r.cache[0]);first=r.cache[0].copy()
+        r.cache[0]=np.concatenate([first,first*2+[4,3,2]])
+        r.cache[1]=np.concatenate([r.cache[1],r.cache[1]])
+        uv=r.cache[2];other=uv.copy();other[:,2]*=2;r.cache[2]=np.concatenate([uv,other])
+        r.cache[3]=np.array([[0,1,0]]*count+[[2,3,2]]*count,dtype=float)
+        r.doc['meshes'][0]['primitives'][0]['attributes']['_TB_TIMESTAMP']=3
+        animation.bake_mylar_geometry(r)
+        # Both centers and relative radii survive the same source squeeze.
+        np.testing.assert_allclose(r.cache[0][count:],r.cache[0][:count]*2+[4,3,2],atol=1e-10)
+
     def test_predeformed_input_rejected_before_mutation(self):
         r=fixture();r.cache[0][8:12,1:]*=.127;before=r.cache[0].copy()
         with self.assertRaisesRegex(ValueError,'already deformed'):animation.bake_mylar_geometry(r)

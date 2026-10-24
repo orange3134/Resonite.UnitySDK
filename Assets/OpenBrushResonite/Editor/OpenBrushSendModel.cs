@@ -34,7 +34,7 @@ public static class OpenBrushSendModel {
             bundle=null;OpenBrushAtlasBudget.Adjustments.Clear();
             if(Has("-openbrushBundle")) {
                 bundle=OpenBrushConversionBundle.Load(Arg("-openbrushBundle"));
-                foreach(var name in new[]{"-openbrushModel","-openbrushManifest","-openbrushTimeline","-openbrushDisco","-openbrushParticles","-openbrushElectricity","-openbrushHyperGrid","-openbrushDanceFloor","-openbrushKeijiro"})
+                foreach(var name in new[]{"-openbrushModel","-openbrushManifest","-openbrushTimeline","-openbrushDisco","-openbrushParticles","-openbrushElectricity","-openbrushHyperGrid","-openbrushDanceFloor","-openbrushKeijiro","-openbrushBubbleWand","-openbrushWaveformParticles"})
                     if(Array.IndexOf(Environment.GetCommandLineArgs(),name)>=0)throw new InvalidOperationException("Do not mix bundle inputs with standalone file arguments: "+name);
             }
             output=Path.GetFullPath(Arg("-openbrushReport"));
@@ -91,11 +91,13 @@ public static class OpenBrushSendModel {
                 OpenBrushCometImport.Prepare(root);
                 OpenBrushFlowImport.Prepare(root);
                 OpenBrushWaveformImport.Prepare(root);
+                if(report.brushes.Contains("WaveformParticles"))OpenBrushWaveformParticleImport.Prepare(root,JsonUtility.FromJson<OpenBrushElectricityImport.Data>(File.ReadAllText(Arg("-openbrushWaveformParticles"))),timing);
                 OpenBrushHypercolorImport.Prepare(root);
                 OpenBrushHueShiftImport.Prepare(root);
                 OpenBrushDigitalImport.Prepare(root);
                 OpenBrushSliceImport.Prepare(root);
                 if(report.brushes.Contains("KeijiroTube"))OpenBrushKeijiroImport.Prepare(root,JsonUtility.FromJson<OpenBrushKeijiroImport.Data>(File.ReadAllText(Arg("-openbrushKeijiro"))),timing);
+                if(report.brushes.Contains("BubbleWand"))OpenBrushBubbleWandImport.Prepare(root,JsonUtility.FromJson<OpenBrushBubbleWandImport.Data>(File.ReadAllText(Arg("-openbrushBubbleWand"))),timing);
                 OpenBrushTriangleImport.Prepare(root,manifest.flatLighting);
                 if(Has("-openbrushPrintingShadows"))OpenBrushPrintingShadowImport.Prepare(root,manifest.flatLighting);
                 OpenBrushLightWireImport.Prepare(root);

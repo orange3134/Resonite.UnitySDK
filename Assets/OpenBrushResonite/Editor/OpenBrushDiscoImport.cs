@@ -78,11 +78,22 @@ public static class OpenBrushDiscoImport
         float glint=200*Mathf.Pow(Mathf.Abs(normalY),100);
         return new Color(Mathf.GammaToLinearSpace(Mathf.Clamp01(color.r*glint)),Mathf.GammaToLinearSpace(Mathf.Clamp01(color.g*glint)),Mathf.GammaToLinearSpace(Mathf.Clamp01(color.b*glint)),1);
     }
-    static Texture2D SpecularAtlas(Part part) {
+    // Preserve one point-sampled texel per face, including batches wider than a GPU texture.
+    public static Vector2Int AtlasSize(int faces) {
+        if(faces<=0)throw new InvalidOperationException("Empty Disco face atlas");
+        int width=Math.Min(faces,Math.Min(4096,SystemInfo.maxTextureSize));
+        int height=(faces-1)/width+1;
+        if(height>SystemInfo.maxTextureSize)throw new InvalidOperationException("Disco face atlas exceeds GPU texture area");
+        return new Vector2Int(width,height);
+    }
+    public static Vector2 FaceUV(int face,Vector2Int size) {
+        return new Vector2((face%size.x+.5f)/size.x,(face/size.x+.5f)/size.y);
+    }
+    public static Texture2D SpecularAtlas(Part part) {
         int faces=part.triangles.Length/3;
-        if(faces>SystemInfo.maxTextureSize)throw new InvalidOperationException("Disco face atlas exceeds texture width; split source batch");
-        var texture=new Texture2D(faces,1,TextureFormat.RGBAFloat,false,true){name="DiscoSpecular",filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
-        var colors=new Color[faces];
+        var size=AtlasSize(faces);
+        var texture=new Texture2D(size.x,size.y,TextureFormat.RGBAFloat,false,true){name="DiscoSpecular",filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
+        var colors=new Color[size.x*size.y];
         for(int i=0;i<faces;i++) {
             var a=part.colors[part.triangles[i*3]];var b=part.colors[part.triangles[i*3+1]];var c=part.colors[part.triangles[i*3+2]];
             if(a!=b || a!=c)throw new InvalidOperationException("Disco per-face specular requires uniform vertex color");
@@ -93,10 +104,11 @@ public static class OpenBrushDiscoImport
     public static void Bake(Part part,Transform parent,out Mesh[] frames,out Texture2D[] glints) {
         frames=new Mesh[FrameCount];glints=new Texture2D[FrameCount];
         int count=part.triangles.Length,faces=count/3;
+        var size=AtlasSize(faces);
         var indices=Enumerable.Range(0,count).ToArray();
         for(int frame=0;frame<FrameCount;frame++) {
-            var positions=new Vector3[count];var normals=new Vector3[count];var colors=new Color[count];var uv=new Vector2[count];var light=new Color[faces];
-            for(int i=0;i<count;i++){int v=part.triangles[i];positions[i]=Deform(part.positions[v],part.normals[v],part.uvRadius[v],frame*Period/FrameCount);colors[i]=part.colors[v];uv[i]=new Vector2((i/3+.5f)/faces,.5f);}
+            var positions=new Vector3[count];var normals=new Vector3[count];var colors=new Color[count];var uv=new Vector2[count];var light=new Color[size.x*size.y];
+            for(int i=0;i<count;i++){int v=part.triangles[i];positions[i]=Deform(part.positions[v],part.normals[v],part.uvRadius[v],frame*Period/FrameCount);colors[i]=part.colors[v];uv[i]=FaceUV(i/3,size);}
             // Source shader uses screen derivatives: split each face so its moving normal stays flat.
             for(int face=0;face<faces;face++) {
                 int i=face*3;var normal=Vector3.Cross(positions[i+1]-positions[i],positions[i+2]-positions[i]).normalized;
@@ -106,7 +118,7 @@ public static class OpenBrushDiscoImport
             }
             var mesh=new Mesh {name="DiscoWave_"+frame.ToString("D2"),indexFormat=UnityEngine.Rendering.IndexFormat.UInt32};
             mesh.vertices=positions;mesh.normals=normals;mesh.colors=colors;mesh.uv=uv;mesh.triangles=indices;mesh.RecalculateBounds();frames[frame]=mesh;
-            var texture=new Texture2D(faces,1,TextureFormat.RGBAFloat,false,true){name="DiscoGlints_"+frame.ToString("D2"),filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
+            var texture=new Texture2D(size.x,size.y,TextureFormat.RGBAFloat,false,true){name="DiscoGlints_"+frame.ToString("D2"),filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
             texture.SetPixels(light);texture.Apply(false,false);glints[frame]=texture;
         }
     }

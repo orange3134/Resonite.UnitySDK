@@ -31,10 +31,11 @@ public static class OpenBrushDiscoGrowth {
     public static void Bake(OpenBrushDiscoImport.Part part,Transform parent,OpenBrushGrowthImport.Stroke[] strokes,float duration,out Mesh[] frames,out Texture2D[] glints,out float[] times) {
         var groups=MatchStrokes(part,strokes,duration);float start=strokes.Min(s=>s.playStart);
         int count=Mathf.CeilToInt((duration-start)*30)+1,faces=part.triangles.Length/3;
+        var size=OpenBrushDiscoImport.AtlasSize(faces);
         frames=new Mesh[count];glints=new Texture2D[count];times=new float[count];
         for(int frame=0;frame<count;frame++) {
             float time=Mathf.Min(duration,start+frame/30f);times[frame]=time;
-            var positions=new List<Vector3>();var normals=new List<Vector3>();var colors=new List<Color>();var uv=new List<Vector2>();var light=new Color[faces];
+            var positions=new List<Vector3>();var normals=new List<Vector3>();var colors=new List<Color>();var uv=new List<Vector2>();var light=new Color[size.x*size.y];
             for(int face=0;face<faces;face++) {
                 var stroke=strokes[groups[part.triangles[face*3]]];
                 if(time<=stroke.playStart)continue;
@@ -43,11 +44,11 @@ public static class OpenBrushDiscoGrowth {
                 var normal=Vector3.Cross(tri[1].p-tri[0].p,tri[2].p-tri[0].p).normalized;
                 float normalY=parent.TransformDirection(normal).normalized.y;var color=(tri[0].c+tri[1].c+tri[2].c)/3;light[face]=OpenBrushDiscoImport.EmissionColor(color,normalY);
                 var polygon=new List<Vertex>();for(int j=0;j<3;j++){var a=tri[j];var b=tri[(j+1)%3];bool inside=a.t<=cutoff,other=b.t<=cutoff;if(inside)polygon.Add(a);if(inside!=other)polygon.Add(Vertex.Lerp(a,b,(cutoff-a.t)/(b.t-a.t)));}
-                for(int j=1;j+1<polygon.Count;j++)foreach(var vertex in new[]{polygon[0],polygon[j],polygon[j+1]}){positions.Add(vertex.p);normals.Add(normal);colors.Add(vertex.c);uv.Add(new Vector2((face+.5f)/faces,.5f));}
+                for(int j=1;j+1<polygon.Count;j++)foreach(var vertex in new[]{polygon[0],polygon[j],polygon[j+1]}){positions.Add(vertex.p);normals.Add(normal);colors.Add(vertex.c);uv.Add(OpenBrushDiscoImport.FaceUV(face,size));}
             }
             if(positions.Count==0){for(int j=0;j<3;j++){positions.Add(part.positions[0]);normals.Add(Vector3.up);colors.Add(Color.clear);uv.Add(Vector2.zero);}}
             var mesh=new Mesh{name="DiscoGrowth_"+frame,indexFormat=UnityEngine.Rendering.IndexFormat.UInt32};mesh.SetVertices(positions);mesh.SetNormals(normals);mesh.SetColors(colors);mesh.SetUVs(0,uv);mesh.SetTriangles(Enumerable.Range(0,positions.Count).ToArray(),0);mesh.RecalculateBounds();frames[frame]=mesh;
-            var texture=new Texture2D(faces,1,TextureFormat.RGBAFloat,false,true){name="DiscoGrowthGlint_"+frame,filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};texture.SetPixels(light);texture.Apply(false,false);glints[frame]=texture;
+            var texture=new Texture2D(size.x,size.y,TextureFormat.RGBAFloat,false,true){name="DiscoGrowthGlint_"+frame,filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};texture.SetPixels(light);texture.Apply(false,false);glints[frame]=texture;
         }
     }
 }

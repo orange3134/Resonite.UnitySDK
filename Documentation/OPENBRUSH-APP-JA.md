@@ -66,3 +66,19 @@ SDKフォルダーの **OpenBrush Importer.exe** をダブルクリックして�
 `build.ps1` はWindows標準の.NET Framework C#コンパイラーを使って起動用exeを再生成します。Pythonの変更だけならexeの再生成は不要です。
 
 Unity側の結合検証は、バッチモードの `-executeMethod OpenBrushCompletedMeshCombineChecks.Run` で実行できます。非一様スケール時の位置・法線・接線、色変換後のRGBA、UV、三角形数、動的・透明メッシュの除外、共有メッシュの維持、頂点数上限を確認します。
+
+## BubbleWandを含む作品
+
+2026年10月24日の更新でBubbleWandに対応しました。以前の
+`Unsupported or missing original brush GUID: eba3f993-f9a1-4d35-b84e-bb08f48981a4 (brush_BubbleWand)`
+は、このブラシの変換処理がなかったことによるエラーです。
+更新済みのSDKでは同じexeからGLBを選び直して読み込めます。exeの再ビルドやGLBの編集は不要です。
+
+DiscoとMylarTubeで複数ストロークが同じUV座標を使う場合の半径検証も修正しました。
+大きなDiscoの模様は複数行のテクスチャへ配置するため、従来の1行の幅制限で停止しません。
+BubbleWandの虹色と反射はResonite材質による近似です。詳細は[対応表](OPENBRUSH-BRUSH-SUPPORT-JA.md)を参照してください。
+
+追加のUnity検証は `-executeMethod OpenBrushBubbleWandChecks.Run` で実行できます。
+元HLSLとCPUの位置・法線、書き順の境界、薄膜ループ、大規模Discoの面とテクスチャの対応を確認します。
+
+UVの横幅がゼロの短いSparksや、同じUVに異なる色があるHueShiftも、元のUVと頂点色を保持して面ごとにベイクします。HueShiftの該当ストロークは1面64×64画素の近似となります。

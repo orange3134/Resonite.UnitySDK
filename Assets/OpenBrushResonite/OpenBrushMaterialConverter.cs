@@ -25,7 +25,7 @@ public class OpenBrushMaterialConverter : ResoniteMaterialConverter
     public override IAssetProvider<FrooxEngine.Material> UpdateConversion(UnityEngine.Material source, IConversionContext context)
     {
         var p = OpenBrushProfiles.Find(source.GetTag("OpenBrushGuid", false, ""));
-        if(source.GetTag("OpenBrushMylarBody",false,"")=="1") {
+        if(source.GetTag("OpenBrushMylarBody",false,"")=="1" || source.GetTag("OpenBrushBubbleWandBody",false,"")=="1") {
             if(Mylar==null)Mylar=gameObject.AddResoniteComponent<PBS_Specular>();
             var body=Mylar.Binding;body.Enabled=true;body.persistent=true;
             body.BlendMode=BlendMode.Opaque;body.RenderQueue=2000;
@@ -34,7 +34,9 @@ public class OpenBrushMaterialConverter : ResoniteMaterialConverter
             body.OffsetUnits=1;
             var paint=source.GetColor("_TintColor");
             body.AlbedoColor=Color.black.ToColorX_Linear();
-            body.SpecularColor=new Color(paint.r*.7490196f,paint.g*.7490196f,paint.b*.7490196f,.68f).ToColorX_Linear();
+            bool bubbleWand=source.GetTag("OpenBrushBubbleWandBody",false,"")=="1";
+            float specular=bubbleWand ? .6f : .7490196f;
+            body.SpecularColor=new Color(paint.r*specular,paint.g*specular,paint.b*specular,bubbleWand ? .9f : .68f).ToColorX_Linear();
             body.EmissiveColor=Color.black.ToColorX_Linear();
             body.AlbedoTexture=null;body.SpecularMap=null;
             return body;

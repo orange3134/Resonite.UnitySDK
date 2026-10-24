@@ -14,9 +14,11 @@ public static class OpenBrushWaveformImport {
  // Calibrated native Unlit bloom ceiling; source HDR can be much higher.
  public const float Ceiling=32;
  public const int Width=256,Height=128,Padding=2,Fps=60;
- public static bool Supports(string guid)=>guid==Guid;
+ public const string FftGuid="d120944d-772f-4062-99c6-46a6f219eeaf";
+ public const string TubeGuid="0f5820df-cb6b-4a6c-960e-56e4c8000eda";
+ public static bool Supports(string guid)=>guid==Guid || guid==FftGuid || guid==TubeGuid;
  sealed class Piece { public MeshRenderer renderer;public Mesh mesh;public int[] indices;public float[] copies;public Mesh chart; }
- sealed class Chart {public string key,guid;public List<Piece> pieces=new List<Piece>();public Vector2 min,max;public Vector2 origin,size;}
+ sealed class Chart {public string key,guid;public List<Piece> pieces=new List<Piece>();public Vector2 min,max;public Vector2 origin,size;public Texture2D pattern;}
  static string Key(params float[] f)=>string.Join(",",f.Select(x=>x.ToString("R",CultureInfo.InvariantCulture)));
  static Piece Read(MeshRenderer r) {
   var mesh=r.GetComponent<MeshFilter>()?.sharedMesh;
@@ -46,7 +48,7 @@ public static class OpenBrushWaveformImport {
    var match=Regex.Match(r.name,@"^(.*_stroke_\d+)_part_\d+$");
    if(!match.Success)throw new InvalidOperationException("Waveform requires generated stroke/part identity: "+r.name);
    string key=match.Groups[1].Value,guid=r.sharedMaterial.GetTag("OpenBrushGuid",false,"");
-   if(!charts.TryGetValue(key,out var chart)){chart=new Chart{key=key,guid=guid};charts.Add(key,chart);}
+   if(!charts.TryGetValue(key,out var chart)){chart=new Chart{key=key,guid=guid,pattern=r.sharedMaterial.mainTexture as Texture2D};charts.Add(key,chart);}
    if(chart.guid!=guid || r.sharedMaterial.mainTextureScale!=Vector2.one || r.sharedMaterial.mainTextureOffset!=Vector2.zero)throw new InvalidOperationException("Ambiguous waveform chart or unsupported source UV transform");
    chart.pieces.Add(Read(r));
   }
@@ -56,6 +58,7 @@ public static class OpenBrushWaveformImport {
   // Source color-dependent blue oscillation can exceed 20 Hz; use 60 fps.
   int fps=Fps;
   int count=sampleTimes?.Length ?? (Mathf.CeilToInt(timeline.Duration*fps)+1);
+  if(sampleTimes==null && charts.Values.All(c=>c.guid==TubeGuid))count=2;
   var layout=OpenBrushAtlasBudget.Select(Width,Height,Padding,columns,rows,count,resolutionScale,SystemInfo.maxTextureSize,sampleTimes==null && resolutionScale==1);
   OpenBrushAtlasBudget.Record("Waveform",layout,Width,Height,count);
   int width=layout.Width,height=layout.Height,textureWidth=layout.TextureWidth,textureHeight=layout.TextureHeight;
@@ -77,10 +80,12 @@ public static class OpenBrushWaveformImport {
     }
    }
    for(int f=0;f<count;f++) {
-    times[f]=sampleTimes==null?Mathf.Min(f/(float)fps,timeline.Duration):sampleTimes[f];RenderTexture.active=rt;GL.sRGBWrite=false;GL.Clear(false,true,new Color(0,0,0,1));
+    times[f]=sampleTimes==null?(count==2?f*timeline.Duration:Mathf.Min(f/(float)fps,timeline.Duration)):sampleTimes[f];RenderTexture.active=rt;GL.sRGBWrite=false;GL.Clear(false,true,new Color(0,0,0,1));
     bake.SetFloat("_Seconds",times[f]);
     foreach(var chart in charts.Values) {
-     
+     bake.SetFloat("_Fft",chart.guid==TubeGuid?2:chart.guid==FftGuid?1:0);
+     if(chart.guid==TubeGuid && chart.pattern==null)throw new InvalidOperationException("WaveformTube requires its source texture");
+     bake.SetTexture("_MainTex",chart.pattern);
      if(!bake.SetPass(0) || UnityEditor.ShaderUtil.ShaderHasError(shader))throw new InvalidOperationException("Waveform shader compilation failed");
      foreach(var piece in chart.pieces)Graphics.DrawMeshNow(piece.chart,Matrix4x4.identity);
     }

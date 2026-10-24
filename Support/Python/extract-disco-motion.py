@@ -22,8 +22,13 @@ def extract(src, dst, reader_path):
             a=prim['attributes'];p=reader.accessor(a['POSITION']);n=reader.accessor(a['NORMAL']);uv=reader.accessor(a['_TB_UNITY_TEXCOORD_0']);c=reader.accessor(a['COLOR_0'])
             if uv.shape!=(len(p),3) or np.any(uv[:,2]<0):raise ValueError('Missing raw radius')
             local_ratios=[]
-            for u in np.unique(uv[:,0]):
-                ids=np.where(uv[:,0]==u)[0]
+            # UV.x repeats across independent strokes. Never fit different
+            # centers/radii together as one cross-section.
+            times=reader.accessor(a['_TB_TIMESTAMP'])
+            rings={}
+            for i in range(len(p)):
+                rings.setdefault(tuple(np.r_[times[i,:2],uv[i,0],uv[i,2]]),[]).append(i)
+            for ids in rings.values():
                 if len(ids)<4 or uv[ids[0],2]<=0:continue
                 pp=p[ids]-p[ids].mean(0);nn=n[ids]-n[ids].mean(0)
                 if (nn*nn).sum()<1:continue

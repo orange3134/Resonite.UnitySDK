@@ -8,7 +8,7 @@ using UnityEngine;
 // A relocatable data bundle, not executable commands. Verify all referenced
 // bytes before preparing a scene or connecting to a Resonite world.
 public sealed class OpenBrushConversionBundle {
- [Serializable] public class Files {public string model,materials,timeline,disco,particles,electricity,hypergrid,dancefloor,keijiro;}
+ [Serializable] public class Files {public string model,materials,timeline,disco,particles,electricity,hypergrid,dancefloor,keijiro,bubblewand,waveformparticles;}
  [Serializable] public class Hash {public string path,sha256;}
  [Serializable] public class Data {public int schemaVersion;public Files files;public Hash[] hashes;}
  readonly Dictionary<string,string> paths=new Dictionary<string,string>();
@@ -36,6 +36,8 @@ public sealed class OpenBrushConversionBundle {
   result.Add(root,verified,"-openbrushHyperGrid",data.files.hypergrid,false);
   result.Add(root,verified,"-openbrushDanceFloor",data.files.dancefloor,false);
   result.Add(root,verified,"-openbrushKeijiro",data.files.keijiro,false);
+  result.Add(root,verified,"-openbrushBubbleWand",data.files.bubblewand,false);
+  result.Add(root,verified,"-openbrushWaveformParticles",data.files.waveformparticles,false);
   return result;
  }
  void Add(string root,HashSet<string> verified,string key,string relative,bool required) {

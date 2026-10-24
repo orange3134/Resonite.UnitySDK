@@ -11,6 +11,8 @@ public static class OpenBrushProceduralImport
     public const string WigglyGuid = "5347acf0-a8e2-47b6-8346-30c70719d763";
     public const string FireGuid = "cb92b597-94ca-4255-b017-0e3f42f12f9e";
     public const string WireGuid = "4391aaaa-df81-4396-9e33-31e4e4930b27";
+    public static bool IsWiggly(string guid) => guid==WigglyGuid || guid=="e814fef1-97fd-7194-4a2f-50c2bb918be2";
+
     [MenuItem("Resonite SDK/Open Brush/Add Fire, LightWire and WigglyGraphite Motion to Prepared Model")]
     public static void PrepareSelected() {
         var root=Selection.activeGameObject;
@@ -22,9 +24,9 @@ public static class OpenBrushProceduralImport
         var materials=root.GetComponentsInChildren<MeshRenderer>(true).Select(r=>r.sharedMaterial).Where(m=>m!=null).Distinct().ToArray();
         foreach(var material in materials) {
             string guid=material.GetTag("OpenBrushGuid",false,"");
-            if(guid!=FireGuid && guid!=WireGuid && guid!=WigglyGuid) continue;
+            if(guid!=FireGuid && guid!=WireGuid && !IsWiggly(guid)) continue;
             if(root.GetComponentsInChildren<OpenBrushTextureMotion>(true).Any(m=>m.SourceMaterial==material)) continue;
-            bool fire=guid==FireGuid, wiggly=guid==WigglyGuid;
+            bool fire=guid==FireGuid, wiggly=IsWiggly(guid);
             var frames=fire ? BakeFire(material.mainTexture as Texture2D) : wiggly ? BakeWiggly(material.mainTexture as Texture2D) : BakeWire();
             if(saveAssets) {
                 if(!AssetDatabase.IsValidFolder("Assets/OpenBrushGenerated")) AssetDatabase.CreateFolder("Assets","OpenBrushGenerated");

@@ -1,9 +1,10 @@
-ブラシ,SDK名,GUID,状態,対応内容,制約とメモ,確認根拠
+﻿ブラシ,SDK名,GUID,状態,対応内容,制約とメモ,確認根拠
 3D Printing Brush,3D Printing Brush,d3f3b18a-da03-f694-b838-28ba8e749a98,制約あり,面の色と法線・元の照明の焼き込み・書き順,Flat環境の主光源・環境光が前提。カスタム天空のSH未対応。影は標準では再現せず、追加の影ベイクは境界アーティファクトあり。,progress-flat-lighting／printing-normals／printing-shadow
-BlocksBasic,BlocksBasic,0e87b49c-6546-3a34-3a44-8a556d7d6c3e,未対応,変換対象外,Blocksモデル用材質。通常の描画ブラシとは別枠。,カタログとプロファイル照合
-BlocksGem,BlocksGem,232998f8-d357-47a2-993a-53415df9be10,未対応,変換対象外,Blocksモデル用材質。,カタログとプロファイル照合
-BlocksGlass,BlocksGlass,3d813d82-5839-4450-8ddc-8e889ecd96c7,未対応,変換対象外,Blocksモデル用透明材質。,カタログとプロファイル照合
+BlocksBasic,BlocksBasic,0e87b49c-6546-3a34-3a44-8a556d7d6c3e,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
+BlocksGem,BlocksGem,232998f8-d357-47a2-993a-53415df9be10,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
+BlocksGlass,BlocksGlass,3d813d82-5839-4450-8ddc-8e889ecd96c7,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
 Bubbles,Bubbles,89d104cd-d012-426b-b5b3-bbaee63ac43c,制約あり,泡の移動・白い反射・書き順,色と白い反射を分離。有限ベイクの継ぎ目、フィルタ差。全方向の完全一致は未確認。,progress-bubbles
+BubbleWand,BubbleWand,eba3f993-f9a1-4d35-b84e-bb08f48981a4,制約あり,膨らみ・揺れ・角度による虹色・書き順,通常材質の膨らみとcurl揺れを30fpsでベイク。虹色は20秒周期のMatcap近似で、視線・照明による差が残る。有限形状ループには継ぎ目があり得る。元の半径チャンネルが必須。三角形内色勾配は未対応、薄膜は最大16材質色、形状は20Mフレーム頂点まで。,OpenBrushBubbleWandChecks（元HLSLとのGPU比較・描画境界）／AYAKASHI完成形・結合オン実送信（2026-10-24）
 CelVinyl,CelVinyl,700f3aa8-9a7c-2384-8b8a-ea028905dd8c,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
 Charcoal,Charcoal,fde6e778-0f7a-e584-38d6-89d44cee59f6,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
 ChromaticWave,ChromaticWave,0f0ff7b2-a677-45eb-a7d6-0cd7206f4816,制約あり,動く模様・色・書き順,描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。,progress-flow-hdr／chromatic／fire-sparks／weather
@@ -15,7 +16,7 @@ Dark,Dark,61820308-bae0-48d4-8288-a7d4e6734d2f,制約あり,背景を暗くす�
 DiamondHull,DiamondHull,c8313697-2563-47fc-832e-290f4c04b901,制約あり,透明材質・書き順／追加オプションで薄膜色変化,標準は簡易透明材質。薄膜は -openbrushDiamondFilm が必要。Matcapの角度・模様固定方向・光沢に差、三角形内色勾配は未対応。,progress-diamond
 DiamondMembrane,DiamondMembrane,4f070b71-da25-48c4-9322-e9216d921562,制約あり,透明材質・書き順／追加オプションで薄膜色変化,標準は簡易透明材質。薄膜は -openbrushDiamondFilm が必要。Matcapの角度・模様固定方向・光沢に差、三角形内色勾配は未対応。,progress-diamond
 Digital,Digital,30cb9af6-be41-4872-8f3e-cbff63fe3db8,制約あり,格子模様・色・書き順,長いUVに対応した静的アトラス。遠距離の細線や画面微分AAは異なる。,progress-digital-race／digital-length
-Disco,Disco,4391aaaa-df73-4396-9e33-31e4e4930b27,制約あり,変形・きらめき・複数ストロークの書き順,描画と変形を同期。光沢とGamma照明差が残る。三角形内の色勾配は未対応。,progress-disco-multi／disco-smoothness
+Disco,Disco,4391aaaa-df73-4396-9e33-31e4e4930b27,制約あり,変形・きらめき・複数ストロークの書き順,描画と変形を同期。大きな面数は複数行のアトラスに配置する。光沢とGamma照明差が残る。三角形内の色勾配は未対応。,progress-disco-multi／disco-smoothness
 DotMarker,DotMarker,d1d991f2-e7a0-4cf1-b328-f57e915e6260,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
 Dots,Dots,6a1cf9f9-032c-45ec-9b1d-a6680bee30f7,制約あり,粒子の形状・色・出現・書き順,生データから有限メッシュ列を作成。粒子数×時間で容量増。,progress-dots
 DoubleFlat,DoubleFlat,f4a0550c-332a-4e1a-9793-b71508f4a454,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
@@ -27,8 +28,8 @@ DuctTape,DuctTape,d0262945-853c-4481-9cbd-88586bed93cb,制約あり,色・テク
 DuctTapeGeometry,DuctTapeGeometry,84d5bbb2-6634-8434-f8a7-681b576b4664,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
 Electricity,Electricity,f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51,制約あり,電気の変形・色・書き順,元の生チャンネルが必須。有限メッシュ列、HDRとBloomは近似。,progress-electricity／mixed-bundle
 Embers,Embers,02ffb866-7fb2-4d15-b761-1012cefb1360,制約あり,粒の動き・描画時刻に応じた出現,ネイティブ表現による近似。元のシミュレーションの完全再現ではない。,BrushTest描画・粒子検証
-EnvironmentDiffuse,EnvironmentDiffuse,0ad58bbd-42bc-484e-ad9a-b61036ff4ce7,未対応,変換対象外,環境モデル用材質。,カタログとプロファイル照合
-EnvironmentDiffuseLightMap,EnvironmentDiffuseLightMap,d01d9d6c-9a61-4aba-8146-5891fafb013b,未対応,変換対象外,環境モデルとライトマップ用材質。,カタログとプロファイル照合
+EnvironmentDiffuse,EnvironmentDiffuse,0ad58bbd-42bc-484e-ad9a-b61036ff4ce7,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
+EnvironmentDiffuseLightMap,EnvironmentDiffuseLightMap,d01d9d6c-9a61-4aba-8146-5891fafb013b,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
 FacetedTube,FacetedTube,4391ffaa-df73-4396-9e33-31e4e4930b27,制約あり,面ごとの色・書き順,元の面表現を変換。レンダラーと環境差に共通制約。,progress-solid-extra
 Fairy,Fairy,d9cc5e99-ace1-4d12-96e0-4a7c18c99cfc,制約あり,星雲等の動く模様・5色・書き順,元HDRが強すぎるため出力を抑制。Spaceの色・粒状感、Fairyの微細模様に差。音声反応なし。,progress-fairy-space
 Feather,Feather,a555b809-2017-46cb-ac26-e63173d8f45e,制約あり,柔らかいテクスチャ・色・書き順,アトラス端・ミップを修正。Featherに薄い三角形境界が残る。暗色と背景依存の加算差あり。,progress-soft-mip-isolation
@@ -51,7 +52,7 @@ Leaves,Leaves,ea19de07-d0c0-4484-9198-18489a3c1487,制約あり,色・カット�
 Leaves2,Leaves2,7259cce5-41c1-ec74-c885-78af28a31d95,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
 Light,Light,2241cd32-8ba2-48a5-9ee7-2caef7e9ed62,制約あり,発光・色・書き順,Bloomと露出による発光の広がりは近似。,プロファイル／BrushTest
 LightWire,LightWire,4391aaaa-df81-4396-9e33-31e4e4930b27,制約あり,膨らみ・走る光・色・書き順,光の時計は描画と独立。光沢・Bloom差、極端に長いUVの細部制約。,progress-lightwire-fullhdr
-Lofted,Lofted,d381e0f5-3def-4a0d-8853-31e9200bcbda,制約あり,色・テクスチャ・書き順,照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。,プロファイル／BrushTest・塗料ブラシ比較
+Lofted,Lofted,d381e0f5-3def-4a0d-8853-31e9200bcbda,制約あり,色・テクスチャ・書き順,照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。 UV重複・異色のストロークは面ごと64×64画素でベイク。,プロファイル／BrushTest・塗料ブラシ比較
 Lofted (Hue Shift),LoftedHueShift,c5da2e70-a6e4-63a4-898c-5cfedef09c97,制約あり,元の色相変換・書き順,元の頂点色を基に色変換。Lofted側のGamma照明を経験的補正。全照明一致ではない。,progress-hueshift-brushtest
 Marbled Rainbow,Marbled Rainbow,c86c058d-1bda-2e94-08db-f3d6a96ac4a1,制約あり,マーブル色変換・法線・書き順,元の色計算を保持。照明・光沢はネイティブPBS近似。,progress-marbled
 Marker,Marker,429ed64a-4e97-4466-84d3-145a861ef684,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
@@ -62,9 +63,9 @@ MylarTube,MylarTube,8e58ceea-7830-49b4-aba9-6215104ab52a,制約あり,くびれ�
 NeonPulse,NeonPulse,b2ffef01-eaaa-4ab5-aa64-95a2c4f5dbc6,制約あり,走る光・書き順,標準Fresnelの角度応答に差。追加オプションのMatcapで改善するが視線・反射は近似。,progress-neon／neon-matcap
 OilPaint,OilPaint,f72ec0e7-a844-4e38-82e3-140c44772699,制約あり,色・テクスチャ・書き順,照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。,プロファイル／BrushTest・塗料ブラシ比較
 Paper,Paper,f1114e2e-eb8d-4fde-915a-6e653b54e9f5,制約あり,色・テクスチャ・書き順,照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。,プロファイル／BrushTest・塗料ブラシ比較
-PassthroughHull,PassthroughHull,cc131ff8-0d17-4677-93e0-d7cd19fea9ac,未対応,変換対象外,パススルー表現の変換未実装。,カタログとプロファイル照合
-PbrTemplate,PbrTemplate,f86a096c-2f4f-4f9d-ae19-81b99f2944e0,未対応,変換対象外,インポートモデル用テンプレート。,カタログとプロファイル照合
-PbrTransparentTemplate,PbrTransparentTemplate,19826f62-42ac-4a9e-8b77-4231fbd0cfbf,未対応,変換対象外,透明PBRモデル用テンプレート。,カタログとプロファイル照合
+PassthroughHull,PassthroughHull,cc131ff8-0d17-4677-93e0-d7cd19fea9ac,未対応,変換対象外,通常シェーダーはRGBとカメラ出力alphaをクリアするMRパススルーの穴。普通の透明マテリアルでは代用できず、Resonite側のMR/compositor連携が別途必要。,カタログとプロファイル照合
+PbrTemplate,PbrTemplate,f86a096c-2f4f-4f9d-ae19-81b99f2944e0,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
+PbrTransparentTemplate,PbrTransparentTemplate,19826f62-42ac-4a9e-8b77-4231fbd0cfbf,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
 Petal,Petal,e0abbc80-0f80-e854-4970-8924a0863dcc,制約あり,色・テクスチャ・書き順,照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。,プロファイル／BrushTest・塗料ブラシ比較
 Plasma,Plasma,c33714d1-b2f9-412e-bd50-1884c9d46336,制約あり,動く模様・色・書き順,描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。,progress-flow-hdr／chromatic／fire-sparks／weather
 QuillCube,QuillCube,b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b,制約あり,頂点色・アルファ・形状・書き順,元のMSAA alpha-to-coverageをアルファ合成で近似。縁や重なりが異なる。,プロファイル／progress-experimental-paint
@@ -90,10 +91,10 @@ Splatter,Splatter,8dc4a70c-d558-4efd-a5ed-d4e860f40dc3,制約あり,色・テク
 SquarePaper,SquarePaper,2e03b1bf-3ebd-4609-9d7e-f4cafadc4dfa,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
 Stars,Stars,0eb4db27-3f82-408d-b5a1-19ebd7d5b711,制約あり,粒の点滅・HDR色・書き順,HDR頂点色を保持。元のBloom・色変換・フィルタ差は残る。音声反応未対応。,progress-stars-hdr／particles
 Streamers,Streamers,44bb800a-fbc3-4592-8426-94ecb05ddec3,制約あり,動く模様・色・書き順,描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。,progress-flow-hdr／chromatic／fire-sparks／weather
-SvgTemplate,SvgTemplate,cf3401b3-4ada-4877-995a-1aa64e7b604a,未対応,変換対象外,SVG用テンプレート。,カタログとプロファイル照合
+SvgTemplate,SvgTemplate,cf3401b3-4ada-4877-995a-1aa64e7b604a,未対応,変換対象外,モデル／環境インポート用のFakeBrush定義で、描画ストロークを生成する通常ブラシではない。モデルごとの材質・テクスチャ・LightMap・透明度と、時刻なしメッシュを保持する別の変換経路が必要。現行のスケッチ変換経路では未対応。,2026-10-24：通常材質とFakeBrush/BlocksBrushScript等を確認
 Taffy,Taffy,0077f88c-d93a-42f3-b59b-b31c50cdb414,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
 TaperedFlat,TaperedFlat,b468c1fb-f254-41ed-8ec9-57030bc5660c,制約あり,色・テクスチャ・書き順,照明差あり。CoarseBristlesの細い筆毛内部は色測定の十分な対象になっていない。,プロファイル／塗料ブラシ比較
-TaperedHueShift,TaperedHueShift,3d9755da-56c7-7294-9b1d-5ec349975f52,制約あり,元の色相変換・書き順,元の頂点色を基に色変換。Lofted側のGamma照明を経験的補正。全照明一致ではない。,progress-hueshift-brushtest
+TaperedHueShift,TaperedHueShift,3d9755da-56c7-7294-9b1d-5ec349975f52,制約あり,元の色相変換・書き順,元の頂点色を基に色変換。Lofted側のGamma照明を経験的補正。全照明一致ではない。 UV重複・異色のストロークは面ごと64×64画素でベイク。,progress-hueshift-brushtest
 TaperedMarker,TaperedMarker,d90c6ad8-af0f-4b54-b422-e0f92abe1b3c,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
 TaperedMarker_Flat,TaperedMarker_Flat,1a26b8c0-8a07-4f8a-9fac-d2ef36e0cad0,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
 TaperedWire,TaperedWire,9568870f-8594-60f4-1b20-dfbc8a5eac0e,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
@@ -105,13 +106,34 @@ TubeToonInverted,TubeToonInverted,9871385a-df73-4396-9e33-31e4e4930b27,制約あ
 UnlitHull,UnlitHull,a8fea537-da7c-4d4b-817f-24f074725d6d,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
 VelvetInk,VelvetInk,d229d335-c334-495a-a801-660ac8a87360,制約あり,柔らかいテクスチャ・色・書き順,アトラス端・ミップを修正。Featherに薄い三角形境界が残る。暗色と背景依存の加算差あり。,progress-soft-mip-isolation
 Waveform,Waveform,10201aa3-ebc2-42d8-84b7-2e63f6eeb8ab,制約あり,音声なしの波形模様・色・書き順,60fps有限ベイク、発光上限を調整。音声入力・FFT連動は再現しない。,progress-waveform
-WaveformFFT,WaveformFFT,d120944d-772f-4062-99c6-46a6f219eeaf,未対応,変換対象外,FFT音声連動を含め未実装。通常のWaveformとは別。,カタログとプロファイル照合
-WaveformParticles,WaveformParticles,6a1cf9f9-032c-45ec-9b6e-a6680bee30f7,未対応,変換対象外,粒子型Waveform未実装。,カタログとプロファイル照合
-WaveformTube,WaveformTube,0f5820df-cb6b-4a6c-960e-56e4c8000eda,未対応,変換対象外,チューブ型Waveform未実装。,カタログとプロファイル照合
+WaveformFFT,WaveformFFT,d120944d-772f-4062-99c6-46a6f219eeaf,制約あり,音声なしのFFT状波形模様・色・書き順,通常シェーダーの非AUDIO_REACTIVE式を60fpsでベイク。音声入力や実際のFFT値は渡さない。HDRを抑制し、有限時間の反復境界・解像度・Bloomに差が残る。,Waveform GPU/scalar誤差0.00218／coverage-variants2実機
+WaveformParticles,WaveformParticles,6a1cf9f9-032c-45ec-9b6e-a6680bee30f7,制約あり,元の三角形粒子・curl運動・粒の出現,生オフセット必須。ビルボード化せず30fpsのメッシュ列で再現。完成形は粒の経過時間10秒から開始、書き順では粒の出現から経過時間を再開。元アプリの絶対時刻・音声・位相は引き継がない。10Mフレーム頂点上限と反復境界あり。,生データの三角形検証／GPU粒サイズ・単位検証／coverage-audio実機
+WaveformTube,WaveformTube,0f5820df-cb6b-4a6c-960e-56e4c8000eda,制約あり,音声入力なしの帯模様・UV変形・色・書き順,累積ビート0・初期波形テクスチャ状態を再現。無音状態では模様は静止し、重複画像を2端点に削減。音声連動・録音済み波形の再生は未対応。HDRとBloomに差が残る。,通常シェーダー照合／OpenBrushCoverageChecks／coverage-audio実機
 WetPaint,WetPaint,b67c0e81-ce6d-40a8-aeb0-ef036b081aa3,制約あり,色・テクスチャ・書き順,照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。,プロファイル／BrushTest・塗料ブラシ比較
 WigglyGraphite,WigglyGraphite,5347acf0-a8e2-47b6-8346-30c70719d763,制約あり,揺らぐ模様・色・書き順,模様の時計は描画と独立。色を補正したが明るさに差が残る。,progress-sampling／BrushTest
 Wind,Wind,7136a729-1aab-bd24-f8b2-ca88b6adfb67,制約あり,動く模様・色・書き順,描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。,progress-flow-hdr／chromatic／fire-sparks／weather
 Wire,Wire,4391385a-cf83-4396-9e33-31e4e4930b27,対応あり,色・形状・書き順,基本変換に対応。共通制約は適用される。,プロファイル・描画変換実装／複数ブラシ比較
 Wire (Lit),Wire (Lit),62fef968-e842-3224-4a0e-1fdb7cfb745c,制約あり,色・カットアウト・表面材質・書き順,法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。,progress-experimental-paint／paint2／lit-standard／solid-extra
 Wireframe,Wireframe,2c1a6a63-6552-4d23-86d7-58f6fba8581b,制約あり,輪郭模様・色・書き順,基準背景に対する加算近似。任意背景・三角形内色勾配・音声・スクリプトのclip/dissolveは未対応または未検証。,progress-wireframe
-HypercolorSingleSided,HypercolorSingleSided,e8ef32b1-baa8-460a-9c2c-9cf8506794f5,制約あり,Hypercolor系の追加GUIDの変換,名前に反して元descriptorは裏面も生成する。カタログ外の追加GUID。独立した全方向の実写検証は未確認。,プロファイル／progress-hypercolor
+HypercolorSingleSided,HypercolorSingleSided,e8ef32b1-baa8-460a-9c2c-9cf8506794f5,制約あり,Hypercolor系の追加GUIDの変換,名前に反して元descriptorは裏面も生成する。Manifest未登録の別GUID。今回の全定義監査には含む。独立した全方向の実写検証は未確認。,プロファイル／progress-hypercolor
+Braid3,Braid3,22d4f434-23e4-49d9-a9bd-05798aa21e58,未対応,変換対象外,旧exportManifestにGUIDが残るが、現行のBrushDescriptor・通常マテリアル・該当シェーダーは見つからない。旧版の実アセットまたは元の見た目を確認できるGLBが必要。名前だけで別ブラシへ置換しない。,GUID再監査（2026-10-24）／Support/exportManifest.json・実行ビルド版
+CandyCane,CandyCane,61d2ef63-ed60-49b3-85fb-7267b7d234f2,未対応,変換対象外,旧exportManifestにGUIDが残るが、現行のBrushDescriptor・通常マテリアル・該当シェーダーは見つからない。旧版の実アセットまたは元の見た目を確認できるGLBが必要。名前だけで別ブラシへ置換しない。,GUID再監査（2026-10-24）／Support/exportManifest.json・実行ビルド版
+CoarseBristlesSingleSided,CoarseBristlesSingleSided,79168f10-6961-464a-8be1-57ed364c5600,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+DuctTapeSingleSided,DuctTapeSingleSided,3ca16e2f-bdcd-4da2-8631-dcef342f40f1,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+FlatSingleSided,FlatSingleSided,280c0a7a-aad8-416c-a7d2-df63d129ca70,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+GouacheSingleSided,GouacheSingleSided,4465b5ef-3605-bec4-2b3e-6b04508ddb6b,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+HolidayTree,HolidayTree,20a0bf1a-a96e-44e5-84ac-9823d2d65023,未対応,変換対象外,旧exportManifestにGUIDが残るが、現行のBrushDescriptor・通常マテリアル・該当シェーダーは見つからない。旧版の実アセットまたは元の見た目を確認できるGLBが必要。名前だけで別ブラシへ置換しない。,GUID再監査（2026-10-24）／Support/exportManifest.json・実行ビルド版
+InkSingleSided,InkSingleSided,c0012095-3ffd-4040-8ee1-fc180d346eaa,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+MarkerGeometry,MarkerGeometry,66ec961b-e5ea-5464-4a97-c601ac31047c,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Manifest未登録。材質・変換経路を確認したが、この旧Geometry版の実写比較は未実施。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+OilPaintGeometry,OilPaintGeometry,4f48a0b1-3f88-c0b4-b9e3-c7ceea47d00b,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Manifest未登録。材質・変換経路を確認したが、この旧Geometry版の実写比較は未実施。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+OilPaintSingleSided,OilPaintSingleSided,c515dad7-4393-4681-81ad-162ef052241b,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+PaperGeometry,PaperGeometry,c8c352e1-593f-1b94-1869-6896e28a4184,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Manifest未登録。材質・変換経路を確認したが、この旧Geometry版の実写比較は未実施。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+PaperSingleSided,PaperSingleSided,759f1ebd-20cd-4720-8d41-234e0da63716,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+Snowflake,Snowflake,2b65cd94-9259-4f10-99d2-d54b6664ac33,未対応,変換対象外,旧exportManifestにGUIDが残るが、現行のBrushDescriptor・通常マテリアル・該当シェーダーは見つからない。旧版の実アセットまたは元の見た目を確認できるGLBが必要。名前だけで別ブラシへ置換しない。,GUID再監査（2026-10-24）／Support/exportManifest.json・実行ビルド版
+SplatterSingleSided,SplatterSingleSided,7a1c8107-50c5-4b70-9a39-421576d6617e,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+TaperedFlatSingleSided,TaperedFlatSingleSided,c8ccb53d-ae13-45ef-8afb-b730d81394eb,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+TaperedMarkerGeometry,TaperedMarkerGeometry,ec4fa4d9-212e-df34-0afb-99330c2392d6,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Manifest未登録。材質・変換経路を確認したが、この旧Geometry版の実写比較は未実施。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+ThickPaintSingleSided,ThickPaintSingleSided,fdf0326a-c0d1-4fed-b101-9db0ff6d071f,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+TubeUnlit,TubeUnlit,6f16e360-64ef-48a8-814b-53b580bf93d0,未対応,変換対象外,テスト用定義。Manifest・exportManifest未登録。DurableNameが空で、通常m_Materialも未設定。変換対象として未実装。,GUID再監査（2026-10-24）／Assets/Resources/X/Brushes/Test/TubeUnlit.asset
+WetPaintSingleSided,WetPaintSingleSided,dea67637-cd1a-27e4-c9b1-52f4bbcb84e5,制約あり,通常マテリアルの色・模様・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks
+WigglyGraphiteSingleSided,WigglyGraphiteSingleSided,e814fef1-97fd-7194-4a2f-50c2bb918be2,制約あり,揺らぐ鉛筆模様・色・書き順,通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。6段階・12fpsの模様アニメーションを共用。,通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks

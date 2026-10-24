@@ -305,19 +305,22 @@ def bake_mylar_geometry(reader):
             if brush != guid: continue
             if 'NORMAL' not in attrs or '_TB_UNITY_TEXCOORD_0' not in attrs:
                 raise ValueError('MylarTube needs original normal and radius attributes')
-            signature = (attrs['NORMAL'], attrs['_TB_UNITY_TEXCOORD_0'])
+            signature = (attrs['NORMAL'], attrs['_TB_UNITY_TEXCOORD_0'], attrs.get('_TB_TIMESTAMP'))
             if position in plans and plans[position][0] != signature:
                 raise ValueError('Conflicting shared MylarTube shape attributes')
             plans[position] = (signature, mesh.get('name', ''))
     pending, reports = {}, []
     for position, (signature, name) in plans.items():
         if uses[position] != {guid}: raise ValueError('MylarTube positions shared with another brush')
-        points = reader.accessor(position); normals, uv = (reader.accessor(i) for i in signature)
+        points = reader.accessor(position); normals, uv = (reader.accessor(i) for i in signature[:2])
         if points.shape != normals.shape or points.shape != uv.shape or points.shape[1] != 3 or np.any(uv[:, 2] < 0):
             raise ValueError('Invalid MylarTube geometry or radius dimensions')
         ratios = []
-        for u in np.unique(uv[:, 0]):
-            ids = np.flatnonzero(uv[:, 0] == u)
+        times = reader.accessor(signature[2]) if signature[2] is not None else np.zeros_like(uv)
+        rings = {}
+        for i in range(len(points)):
+            rings.setdefault(tuple(np.r_[times[i, :2], uv[i, 0], uv[i, 2]]), []).append(i)
+        for ids in rings.values():
             if len(ids) < 4 or uv[ids[0], 2] <= 0: continue
             # Grouped coincident UVs can include multiple strokes/radii. Fit
             # radius-scaled normals so each original radius remains accounted for.
