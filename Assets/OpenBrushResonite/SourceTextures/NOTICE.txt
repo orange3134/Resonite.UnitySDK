@@ -1,0 +1,10 @@
+CometGradient.png and CometPattern.png are copied without modification from Open Brush Unity Tools commit 57914048d176a06829bcf72ec63cddd7ce819e5f, Runtime/Shaders/2_UnlitSpecials/Comet/{gradient,main}.png. Copyright The Tilt Brush Authors / Open Brush contributors. Apache-2.0; see LICENSE.txt.
+CometPattern.png is the independent shader validation fixture. Model conversion uses the texture in the input GLB. CometGradient.png supplies the normal material's _AlphaMask, which legacy GLB omits.
+
+SamplingFire.png, SamplingWiggly.png, and SamplingHighlighter.png are unmodified copies from the same Open Brush Unity Tools commit: 2_UnlitSpecials/Fire/fire.png, 4_DiffuseSpecials/WigglyGraphite/WigglyGraphite_BaseMap.png, and 1_UnlitCommon/Highlighter/maintexture.png. Copyright The Tilt Brush Authors / Open Brush contributors, Apache-2.0. Used only by GPU validation checks.
+
+Hypercolor_BaseMap.png and Hypercolor_Normal.png are unmodified copies from Open Brush Unity Tools commit 57914048d176a06829bcf72ec63cddd7ce819e5f, Runtime/Shaders/6_StandardSpecials/Hypercolor/. Copyright The Tilt Brush Authors / Open Brush contributors, Apache-2.0. These supply the normal m_Material's albedo pattern and tangent normal map for the finite Hypercolor shader bake.
+
+Wind.png, Rain.png, Fire2.png, Fire2Displacement.png, and Sparks.png are unmodified copies from Open Brush Unity Tools commit 57914048d176a06829bcf72ec63cddd7ce819e5f, Runtime/Shaders/8_Experimental/{Wind/main.png,Rain/main.png,Fire2/flame_map.png,Fire2/distortion.png,Sparks/maintexture.png}. Copyright The Tilt Brush Authors / Open Brush contributors, Apache-2.0; see LICENSE.txt. These supply the normal m_Material shader patterns and the omitted Fire2 displacement input for the finite shader bake.
+
+TaperedHueShift.png: normal TaperedHueShift/main.png, Open Brush Unity Tools (Apache-2.0).

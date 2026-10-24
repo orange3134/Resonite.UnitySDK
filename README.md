@@ -311,3 +311,15 @@ If the previous phases scheduled any conversions those are processed in the last
     - This is done so Resonite can do its own processing of this asset as soon as possible, while Unity converts others
     - It's also done for effect - it allows user to watch the scene pop in piece by piece, rather than taking longer to pop all at once
 - The system tracks if the assets changed since the last conversion and will re-invoke the conversion in such cases
+
+## Open Brush カスタム変換の日本語資料
+
+このチェックアウトに追加したOpen Brush変換機能の使い方と、2026年10月5日時点の対応状況です。上流SDKの一般説明とは別に、こちらを参照してください。
+
+- [スケッチをResoniteへ取り込む手順](Documentation/OPENBRUSH-IMPORT-JA.md)
+- [全ブラシの対応状況と制約](Documentation/OPENBRUSH-BRUSH-SUPPORT-JA.md)
+- [対応表のCSV](Documentation/OPENBRUSH-BRUSH-SUPPORT.csv)
+
+### Open Brush desktop importer
+
+Double-click **OpenBrush Importer.exe** to select a GLB, enter the ResoniteLink port, and import with or without stroke animation. Conversion and transfer progress are shown in the app. See [アプリの手順](Documentation/OPENBRUSH-APP-JA.md).

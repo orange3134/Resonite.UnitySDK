@@ -155,3 +155,13 @@ InitTestScene*.unity*
 /Thry*.csproj
 /UniTask*.csproj
 /VRC.*.csproj
+
+# Local Open Brush import environment and generated output
+/.local/
+/.venv-openbrush/
+/.resoloop/
+/OpenBrush Importer.exe
+/Assets/OpenBrushGenerated/
+/Assets/OpenBrushGenerated.meta
+__pycache__/
+*.pyc

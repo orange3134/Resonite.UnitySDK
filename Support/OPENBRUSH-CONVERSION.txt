@@ -1,0 +1,88 @@
+Japanese user guide and current brush inventory (2026-10-05):
+  ../Documentation/OPENBRUSH-IMPORT-JA.md
+  ../Documentation/OPENBRUSH-BRUSH-SUPPORT-JA.md
+Use the port currently displayed by ResoniteLink; numbers below are examples.
+
+Open Brush drawing-animation conversion
+======================================
+
+Run these commands from the customized SDK project directory in PowerShell.
+Use Python 3.10+ and the Unity version in ProjectSettings/ProjectVersion.txt.
+The SDK project must not already be open in another Unity Editor when launching
+the batch sender. Resonite must be running with ResoniteLink enabled.
+
+1. Prepare a new bundle (offline)
+
+  python -m pip install -r Support/Python/requirements-brush-animation.txt
+  python Support/Python/prepare-openbrush-bundle.py "C:/exports/MySketch.glb" "D:/bundles/MySketch" --max-gap 0.5
+
+Input must be an ORIGINAL Open Brush GLB with brush GUIDs, exported drawing
+timestamps and raw shader channels. Do not use a previously animated GLB.
+The source export must have its referenced textures alongside it during this
+step. The destination must not already exist; failed preparation does not
+publish a partial bundle. Unknown brush GUIDs are reported as errors.
+
+The generator embeds textures, slices strokes for drawing order, creates the
+material/timeline manifests, and selects raw Disco, Electricity and particle
+data automatically. LightWire geometry is prepared before growth slicing.
+The bundle folder can then be copied elsewhere in its entirety. Original GLB
+and source texture files are not needed to send the completed bundle.
+
+Options: --speed 1 --lead-in 1 --hold 3 --slices-per-second 30 --max-slices 96.
+--max-gap compresses long pauses between strokes; omitted means preserve them.
+Times are seconds. More slices increase the number of objects in Resonite.
+This entry point prepares drawing animation; static-only export is separate.
+
+2. Send the bundle to Resonite
+
+  & "C:/Program Files/Unity/Hub/Editor/2022.3.62f3/Editor/Unity.exe" -batchmode -projectPath "$PWD" -executeMethod OpenBrushSendModel.Run -openbrushBundle "D:/bundles/MySketch/bundle.json" -openbrushName "MySketch animated" -openbrushPort 47840 -openbrushPosition 0,0,2 -openbrushReport "$PWD/.local/MySketch-send-01.json" -logFile "$PWD/Logs/MySketch-send-01.log"
+
+Use the port displayed by the target world's ResoniteLink. Choose an unused
+report filename for each send. Do not add -nographics: material preparation
+needs graphics. The sender exits Unity itself, so -quit is not required.
+All bundle file checksums are verified before connecting to the world. Do not
+edit generated bundle files individually; regenerate from the original export.
+Do not combine -openbrushBundle with standalone model/manifest/timeline or
+auxiliary file arguments. Existing standalone command arguments still work.
+
+Sending creates a new root with Restart, Play/Pause and Clear controls.
+Drawing loops after the final hold. Read completed:true, rootId and playbackId
+in the JSON report after Unity exits; a started process is not confirmation
+of a successful send. Avoid retrying a still-running send or reusing its report.
+
+Current limits
+--------------
+Brush appearance uses native material approximations and baked motion where
+custom Unity shaders cannot be transferred. Lighting, bloom, viewing angle and
+some blend modes can still differ from Open Brush. Long or complex sketches
+with baked texture/mesh sequences can consume substantial memory. This workflow
+does not yet enforce an aggregate memory budget. A portable source bundle does
+not imply the resulting Resonite item has been saved/uploaded to cloud storage.
+
+Development checks
+------------------
+  python Support/Python/test_prepare_openbrush_bundle.py
+  Unity.exe -batchmode -projectPath PROJECT -executeMethod OpenBrushBundleChecks.Run -logFile LOG
+
+Python checks cover auxiliary dispatch, self-contained texture embedding,
+relocation, time options, source preservation and atomic output on failure.
+Unity checks cover relative lookup, checksum rejection and path restrictions.
+Visual/runtime parity requires a native Resonite check as well.
+
+Helper provenance
+-----------------
+animate-brush-glb.py and extract-particle-motion.py originate in
+open-brush-versetv/Support/Python. extract-electricity-motion.py originates in
+that repository's Support/Exports/parity. The Disco extractor and LightWire
+shape baker were developed for this customized SDK. Copies here make bundle
+preparation independent of the Open Brush checkout; keep changes synchronized
+when updating the corresponding exporter or source brush layout.
+
+Historical remote texture URLs (2026-10-10)
+-----------------------------------------
+If preparation reports remote texture references, add --brush-assets PATH, where
+PATH is the installed Open Brush Support/shaders/brushes directory. Historical
+tiltbrush.com/shaders/brushes URLs are resolved to matching local files, never
+downloaded. The original GLB is unchanged; images are embedded in the bundle.
+Missing files and unsupported URLs fail before publishing a completed bundle.
+See the Japanese guide for a complete command and the current local path.

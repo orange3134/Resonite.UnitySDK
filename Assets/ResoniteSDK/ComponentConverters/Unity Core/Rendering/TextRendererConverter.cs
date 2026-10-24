@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class TextRendererHelper
@@ -42,12 +43,22 @@ public static class TextRendererHelper
         if (unity.fontSize > 0)
             resonite.Size *= unity.fontSize;
 
+        resonite.VerticalAlign = (int)unity.anchor >= (int)TextAnchor.LowerLeft ? Elements.Assets.TextVerticalAlignment.Bottom :
+            (int)unity.anchor >= (int)TextAnchor.MiddleLeft ? Elements.Assets.TextVerticalAlignment.Middle : Elements.Assets.TextVerticalAlignment.Top;
         resonite.LineHeight = 1;
         resonite.ParseRichText = true;
     }
 }
 
-public class TextRendererConverter : ResoniteSingleComponentConverter<UnityEngine.TextMesh, FrooxEngine.TextRenderer>
+[Serializable, ResoniteTypeName("[FrooxEngine]FrooxEngine.TextRenderer")]
+public class DefaultFontTextRenderer : FrooxEngine.TextRenderer {
+    public override void CollectMembers(Dictionary<string,ResoniteLink.Member> members,IConversionContext context) {
+        base.CollectMembers(members,context);
+        // OnAttach supplies a native default font; an explicit null would erase it.
+        if(Font==null)members.Remove("Font");
+    }
+}
+public class TextRendererConverter : ResoniteSingleComponentConverter<UnityEngine.TextMesh, DefaultFontTextRenderer>
 {
     protected override void UpdateConversion(UnityEngine.TextMesh target, IConversionContext context)
     {
@@ -62,3 +73,4 @@ public class TextRendererConverter : ResoniteSingleComponentConverter<UnityEngin
         toConvert.RemoveAll(c => c is UnityEngine.MeshRenderer);
     }
 }
+

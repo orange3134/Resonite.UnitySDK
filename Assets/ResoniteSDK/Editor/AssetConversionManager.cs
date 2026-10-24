@@ -26,6 +26,8 @@ public struct AssetMap<A> : IEquatable<AssetMap<A>>
 
 public class AssetConversionManager
 {
+    public static event Action<int, int> ConversionProgress;
+
     public const string ASSETS_ROOT_NAME = "__UnityAssets";
 
     public SceneConverter Converter { get; private set; }
@@ -247,6 +249,7 @@ public class AssetConversionManager
         try
         {
             int totalToConvert = _scheduledConversions.Count;
+            ConversionProgress?.Invoke(0, totalToConvert);
 
             while (_scheduledConversions.Count > 0)
             {
@@ -257,6 +260,7 @@ public class AssetConversionManager
                 EditorUtility.DisplayProgressBar("Converting assets...", $"{job.AssetClass}: {job.AssetName}", progress);
 
                 job.Convert(Converter, link);
+                ConversionProgress?.Invoke(totalToConvert - _scheduledConversions.Count, totalToConvert);
             }
 
             // Once conversions are processed, clear this. This is only relevant before the conversions take place
