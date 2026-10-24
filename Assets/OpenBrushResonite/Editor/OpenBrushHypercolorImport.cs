@@ -14,7 +14,7 @@ public static class OpenBrushHypercolorImport {
  public const int Width=128,Height=128,Padding=2,Fps=30;
  public static bool Supports(string guid)=>guid==Guid || guid==Single;
  sealed class Piece { public MeshRenderer renderer;public Mesh mesh;public int[] indices;public float[] copies;public Mesh chart; }
- sealed class Chart {public string key,guid;public List<Piece> pieces=new List<Piece>();public Vector2 min,max;public Vector2 origin;public Texture2D pattern;}
+ sealed class Chart {public string key,guid;public List<Piece> pieces=new List<Piece>();public Vector2 min,max;public Vector2 origin;public int tileWidth=Width,tileHeight=Height;public Texture2D pattern;}
  static string Key(params float[] f)=>string.Join(",",f.Select(x=>x.ToString("R",CultureInfo.InvariantCulture)));
  static Piece Read(MeshRenderer r) {
   var mesh=r.GetComponent<MeshFilter>()?.sharedMesh;
@@ -26,7 +26,7 @@ public static class OpenBrushHypercolorImport {
  public static void Prepare(GameObject root) { PrepareSamples(root,null,1); }
  // Also used for fixed-time resolution probes. Explicit sample times do not
  // imply a seamless loop; callers that serialize a timeline must cover it.
- public static void PrepareSamples(GameObject root,float[] sampleTimes,int resolutionScale) {
+ public static void PrepareSamples(GameObject root,float[] sampleTimes,int resolutionScale,long pixelLimit=OpenBrushAtlasBudget.FramePixelLimit) {
   var targets=root.GetComponentsInChildren<MeshRenderer>(true).Where(r=>r.sharedMaterial!=null && Supports(r.sharedMaterial.GetTag("OpenBrushGuid",false,""))).ToArray();
   if(targets.Length==0)return;
   if(root.transform.Find("Hypercolor Shader Timeline")!=null)throw new InvalidOperationException("Hypercolor already prepared");
@@ -47,10 +47,12 @@ public static class OpenBrushHypercolorImport {
   if(sampleTimes!=null && (sampleTimes.Length<2 || sampleTimes.Any(t=>float.IsNaN(t) || float.IsInfinity(t) || t<0 || t>timeline.Duration) || sampleTimes.Zip(sampleTimes.Skip(1),(a,b)=>b>a).Any(ok=>!ok)))throw new ArgumentException("Expected at least two increasing finite sample times within the timeline");
   // Thirty samples per second for the normal non-audio color evolution.
   int fps=Fps;
-  int width=columns*(Width+2*Padding),height=rows*(Height+2*Padding),count=sampleTimes?.Length ?? (Mathf.CeilToInt(timeline.Duration*fps)+1);
-  int textureWidth=width*resolutionScale,textureHeight=height*resolutionScale;
-  if(textureWidth>SystemInfo.maxTextureSize || textureHeight>SystemInfo.maxTextureSize || (long)textureWidth*textureHeight*(count*2L+1)>134217728)
-   throw new InvalidOperationException("Hypercolor bake exceeds 128M frame pixels; split the sketch or shorten the timeline");
+  if(pixelLimit<1 || pixelLimit>OpenBrushAtlasBudget.FramePixelLimit)throw new ArgumentOutOfRangeException(nameof(pixelLimit));
+  int count=sampleTimes?.Length ?? (Mathf.CeilToInt(timeline.Duration*fps)+1);
+  var layout=OpenBrushAtlasBudget.Select(Width,Height,Padding,columns,rows,checked(count*2+1),resolutionScale,SystemInfo.maxTextureSize,sampleTimes==null,pixelLimit);
+  int width=layout.Width,height=layout.Height,textureWidth=layout.TextureWidth,textureHeight=layout.TextureHeight;
+  OpenBrushAtlasBudget.Record("Hypercolor diffuse/specular/normal",layout,Width,Height,count);
+  foreach(var chart in charts.Values){chart.tileWidth=layout.TileWidth;chart.tileHeight=layout.TileHeight;}
   var frames=new Texture2D[count];var specFrames=new Texture2D[count];Texture2D normalAtlas=null;var times=new float[count];var bake=new Material(shader);
   
   var rt=new RenderTexture(textureWidth,textureHeight,0,RenderTextureFormat.ARGB32,RenderTextureReadWrite.Linear){filterMode=FilterMode.Bilinear};
@@ -62,7 +64,7 @@ public static class OpenBrushHypercolorImport {
    foreach(var chart in charts.Values) {
     var uvs=chart.pieces.SelectMany(p=>p.mesh.uv).ToArray();chart.min=new Vector2(uvs.Min(u=>u.x),uvs.Min(u=>u.y));chart.max=new Vector2(uvs.Max(u=>u.x),uvs.Max(u=>u.y));
     if(chart.max.x-chart.min.x<1e-6 || chart.max.y-chart.min.y<1e-6)throw new InvalidOperationException("Degenerate Hypercolor UV chart");
-    chart.origin=new Vector2((chartIndex%columns)*(Width+2*Padding)+Padding,(chartIndex/columns)*(Height+2*Padding)+Padding);chartIndex++;
+    chart.origin=new Vector2((chartIndex%columns)*(chart.tileWidth+2*Padding)+Padding,(chartIndex/columns)*(chart.tileHeight+2*Padding)+Padding);chartIndex++;
     foreach(var piece in chart.pieces) {
      var uv=piece.mesh.uv;var colors=piece.mesh.colors;var pos=new Vector3[piece.indices.Length];var srcUv=new Vector2[pos.Length];var copies=new Vector2[pos.Length];var rgba=new Color[pos.Length];
      for(int i=0;i<pos.Length;i++) {int v=piece.indices[i];var q=AtlasUV(chart,uv[v],width,height);pos[i]=new Vector3(q.x,q.y,0);srcUv[i]=uv[v];rgba[i]=colors[v];copies[i]=new Vector2(piece.copies[i/3],0);}
@@ -97,7 +99,7 @@ public static class OpenBrushHypercolorImport {
   Debug.Log("HYPERCOLOR_BAKE charts="+charts.Count+" frames="+count+" atlas="+textureWidth+"x"+textureHeight+" duration="+timeline.Duration);
  }
  static Texture2D Load(string name){var t=new Texture2D(2,2,TextureFormat.RGBA32,false,true){wrapMode=TextureWrapMode.Clamp,filterMode=FilterMode.Bilinear};if(!t.LoadImage(System.IO.File.ReadAllBytes("Assets/OpenBrushResonite/SourceTextures/"+name+".png")))throw new InvalidOperationException("Missing normal Hypercolor texture");return t;}
- static Vector2 AtlasUV(Chart c,Vector2 uv,int width,int height) {var t=(uv-c.min)/(c.max-c.min);return new Vector2((c.origin.x+.5f+t.x*(Width-1))/width,(c.origin.y+.5f+t.y*(Height-1))/height);}
+ static Vector2 AtlasUV(Chart c,Vector2 uv,int width,int height) {var t=(uv-c.min)/(c.max-c.min);return new Vector2((c.origin.x+.5f+t.x*(c.tileWidth-1))/width,(c.origin.y+.5f+t.y*(c.tileHeight-1))/height);}
 }
 
 

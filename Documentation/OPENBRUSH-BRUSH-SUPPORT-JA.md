@@ -34,14 +34,14 @@
 | ブラシ | 状態 | 対応内容 | 制約とメモ | 確認根拠 |
 | --- | --- | --- | --- | --- |
 | 3D Printing Brush | 制約あり | 面の色と法線・元の照明の焼き込み・書き順 | Flat環境の主光源・環境光が前提。カスタム天空のSH未対応。影は標準では再現せず、追加の影ベイクは境界アーティファクトあり。 | progress-flat-lighting／printing-normals／printing-shadow |
-| Bubbles | 制約あり | 泡の移動・白い反射・書き順 | 色と白い反射を分離。有限ベイクの継ぎ目、フィルタ差。全方向の完全一致は未確認。 | progress-bubbles |
+| Bubbles | 制約あり | 泡の移動・白い反射・書き順 | 色と白い反射を分離。有限ベイクの継ぎ目、フィルタ差。全方向の完全一致は未確認。完成形の容量超過時は最低10fpsまで動きのサンプル頻度を下げる。粒数・速度・ループ時間は保持。 | progress-bubbles |
 | BubbleWand | 制約あり | 膨らみ・揺れ・角度による虹色・書き順 | 通常材質の膨らみとcurl揺れを30fpsでベイク。虹色は20秒周期のMatcap近似で、視線・照明による差が残る。有限形状ループには継ぎ目があり得る。元の半径チャンネルが必須。三角形内色勾配は未対応、薄膜は最大16材質色、形状は20Mフレーム頂点まで。 | OpenBrushBubbleWandChecks（元HLSLとのGPU比較・描画境界）／AYAKASHI完成形・結合オン実送信（2026-10-24） |
 | CelVinyl | 対応あり | 色・形状・書き順 | 基本変換に対応。共通制約は適用される。 | プロファイル・描画変換実装／複数ブラシ比較 |
 | Charcoal | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
 | ChromaticWave | 制約あり | 動く模様・色・書き順 | 描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。 | progress-flow-hdr／chromatic／fire-sparks／weather |
 | CoarseBristles | 制約あり | 色・テクスチャ・書き順 | 照明差あり。CoarseBristlesの細い筆毛内部は色測定の十分な対象になっていない。 | プロファイル／塗料ブラシ比較 |
 | CoarseBristlesSingleSided | 制約あり | 通常マテリアルの色・模様・書き順 | 通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。 | 通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks |
-| Comet | 制約あり | 彗星状の模様・書き順 | 元の時間変化を近似。加算・発光・サンプリングの差が残る。 | progress-comet |
+| Comet | 制約あり | 彗星状の模様・書き順 | 元の時間変化を近似。加算・発光・サンプリングの差が残る。大量の色は32Mフレーム画素以内へ解像度を調整（最低16/軸）。時間サンプルは維持。 | progress-comet |
 | ConcaveHull | 制約あり | 形状・色・材質・書き順 | 照明を補正した近似。Membraneは書き出しmanifestへの追加登録が必要な版あり。Hullの描画は完成面の表示近似。 | progress-solid-extra |
 | DanceFloor | 制約あり | 形状・模様・位相・書き順 | 元の位相を保持。メッシュと模様のベイクが大容量になりやすい。 | progress-dancefloor |
 | Dark | 制約あり | 背景を暗くする乗算表現・書き順 | Gammaの背景依存乗算を一定の補正で近似。任意の背景で完全一致しない。追加の書き出し登録が必要な版あり。 | progress-dark |
@@ -73,14 +73,14 @@
 | GouacheSingleSided | 制約あり | 通常マテリアルの色・模様・書き順 | 通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。 | 通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks |
 | Guts | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
 | Highlighter | 制約あり | 色・マスク・書き順 | 元のフラグメント表現を焼き込む。UVの範囲が大きい場合は最大512サンプル/辺に制限し、16Mピクセルを超える場合はさらに輪郭用画像の解像度を下げる（最小16サンプル/辺）。細い輪郭や繰り返し模様は差が出る場合がある。重なりと背景依存の合成差が残る。 | progress-highlighter／sampling |
-| Hypercolor | 制約あり | 色変化する模様・書き順 | 有限ベイクとネイティブ材質。光沢・環境・色勾配の全条件での一致は未保証。 | progress-hypercolor |
-| HypercolorSingleSided | 制約あり | Hypercolor系の追加GUIDの変換 | 名前に反して元descriptorは裏面も生成する。Manifest未登録の別GUID。今回の全定義監査には含む。独立した全方向の実写検証は未確認。 | プロファイル／progress-hypercolor |
+| Hypercolor | 制約あり | 色変化する模様・書き順 | 有限ベイクとネイティブ材質。光沢・環境・色勾配の全条件での一致は未保証。模様・光沢・法線の合計128M画素以内へ解像度を自動調整（最低16/軸）。時間サンプルと形状は保持。 | progress-hypercolor |
+| HypercolorSingleSided | 制約あり | Hypercolor系の追加GUIDの変換 | 名前に反して元descriptorは裏面も生成する。Manifest未登録の別GUID。今回の全定義監査には含む。独立した全方向の実写検証は未確認。模様・光沢・法線の合計128M画素以内へ解像度を自動調整（最低16/軸）。時間サンプルと形状は保持。 | プロファイル／progress-hypercolor |
 | HyperGrid | 制約あり | グリッドの形状・出現・色・書き順 | パディングとミップを修正済み。明るさ・鋭さが異なる。静止専用経路は未整備。 | progress-hypergrid-sampling |
 | Icing | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
 | Ink | 制約あり | 色・テクスチャ・書き順 | 照明・粗さ・透過境界はネイティブ材質への近似。全環境での一致は未保証。 | プロファイル／BrushTest・塗料ブラシ比較 |
 | InkGeometry | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
 | InkSingleSided | 制約あり | 通常マテリアルの色・模様・書き順 | 通常m_Materialが既存対応版と同一であることをGUIDごとに確認。元のGLB形状を保持。Gamma/Linear照明・光沢の近似は通常版と共通。現行Open Brushはロード時に現行GUIDへ置換するため、比較写真は同材質の現行形状。旧版固有形状の完全一致を検証したものではない。 | 通常材質のGUID照合／coverage-variants／OpenBrushCoverageChecks |
-| KeijiroTube | 制約あり | 進行する収縮・5色・書き順 | 描画と変形を同期。60fps有限ベイク。暗色・陰影差、ループ時の位相リセットあり。生の半径・接線が必要。 | progress-keijiro-23944 |
+| KeijiroTube | 制約あり | 進行する収縮・5色・書き順 | 描画と変形を同期。通常60fps有限ベイク。大きな完成形は20Mフレーム頂点以内で最低30fpsまで調整。暗色・陰影差、ループ時の位相リセットあり。生の半径・接線が必要。 | progress-keijiro-23944 |
 | Lacewing | 制約あり | 色・高いアルファしきい値・法線・書き順 | 通常材質のSpecularColorは黒で、元の動的反射項も寄与ゼロ。任意の材質変更は未対応。 | progress-lacewing |
 | LeakyPen | 制約あり | 色・カットアウト・法線・書き順 | 5色と両面で調整。Gamma照明と暗色に近似が残る。 | progress-leakypen |
 | Leaves | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
@@ -112,14 +112,14 @@
 | Race | 制約あり | 格子模様・色・書き順 | 長いUVに対応した静的アトラス。遠距離の細線や画面微分AAは異なる。 | progress-digital-race／digital-length |
 | Rain | 制約あり | 動く模様・色・書き順 | 描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。 | progress-flow-hdr／chromatic／fire-sparks／weather |
 | Rainbow | 制約あり | 虹模様・書き順 | 元の色変換を近似。加算重なり・Bloom・細部に差。 | progress-rainbow |
-| Rising Bubbles | 制約あり | 上昇・泡模様・色・書き順 | 位相と模様をサンプリング。細い縁と複雑なレイヤー変換の一般性に課題。 | progress-rising |
+| Rising Bubbles | 制約あり | 上昇・泡模様・色・書き順 | 位相と模様をサンプリング。細い縁と複雑なレイヤー変換の一般性に課題。完成形の容量超過時は最低10fpsまで動きのサンプル頻度を下げる。粒数・速度・ループ時間は保持。 | progress-rising |
 | ShinyHull | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
 | ShinyMembrane | 制約あり | 形状・色・材質・書き順 | 照明を補正した近似。Membraneは書き出しmanifestへの追加登録が必要な版あり。Hullの描画は完成面の表示近似。 | progress-solid-extra |
 | SingleSided | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
 | Slice | 制約あり | 断面の虹・彩度明度模様・書き順 | 選択した筆色を使わないのは元の仕様。透明面の順序差あり。修正済みソースと書き出し登録が必要。 | progress-slice-23944 |
 | Smoke | 制約あり | 煙テクスチャ・加算合成・書き順 | 表示を復元。元の煙の変形や見え方の完全再現は未完了。 | BrushTestでの表示確認／初期変換実装 |
 | SmoothHull | 制約あり | 色・カットアウト・表面材質・書き順 | 法線・片面性・光沢を調整。GammaとLinearの照明差、暗色やハイライト差が残る。 | progress-experimental-paint／paint2／lit-standard／solid-extra |
-| Snow | 制約あり | 粒子の動き・出現・書き順 | 有限フレーム列で近似。フィルタ・見え方と長時間再生に共通制約。 | progress-snow／particles |
+| Snow | 制約あり | 粒子の動き・出現・書き順 | 完成形は同一位相・RGBAの粒を固定点メッシュにまとめ、位置と色を30fps・25秒ループで駆動。粒数・サイズ・UVを維持。書き順付きは従来のフレーム列。有限ループの継ぎ目とフィルタ差は残る。 | progress-snow／particles |
 | SoftHighlighter | 制約あり | 柔らかいテクスチャ・色・書き順 | アトラス端・ミップを修正。Featherに薄い三角形境界が残る。暗色と背景依存の加算差あり。 | progress-soft-mip-isolation |
 | Space | 制約あり | 星雲等の動く模様・5色・書き順 | 元HDRが強すぎるため出力を抑制。Spaceの色・粒状感、Fairyの微細模様に差。音声反応なし。 | progress-fairy-space |
 | Sparks | 制約あり | 動く模様・色・書き順 | 描画時計に同期した有限テクスチャ列。HDR抑制・細部の解像度制約。音声反応未対応。SparksとRainは形状補正あり。 | progress-flow-hdr／chromatic／fire-sparks／weather |
@@ -232,7 +232,7 @@ SDKルートで実行します。入力データやResoniteワールドは変更
 
 残る14項目は、モデル・環境用FakeBrush 8、現行アセットの見つからない旧exportManifest 4、MRパススルー1、通常マテリアル未設定のTubeUnlit 1です。これらを普通の描画ブラシとして対応済みに数えてはいません。モデル用8件には別のインポート処理が必要です。
 
-検証はPython 83テスト、Unityの波形GPU/scalar比較と粒サイズ・座標検証が成功。12575で完成形と書き順を送信・撮影確認しました。`FunkyXmas-1`の元FFT部分11ストロークも送信成功しましたが、作品全体は別のDisco生形状チェックで停止します。FFT部分の成功を全作品の成功とは扱っていません。
+検証はPython 83テスト、Unityの波形GPU/scalar比較と粒サイズ・座標検証が成功。12575で完成形と書き順を送信・撮影確認しました。`FunkyXmas-1`の元FFT部分11ストロークも送信成功しましたが、この時点では作品全体が別のDisco生形状チェックで停止しました。FFT部分の成功を全作品の成功とは扱っていません。
 
 ## 未対応部分の扱い（2026年10月25日）
 
@@ -241,3 +241,11 @@ SDKルートで実行します。入力データやResoniteワールドは変更
 2026年10月25日：BubbleWandの同一ストローク内の繰り返しUVを別断面として検証するよう修正。完成形では切断頂点の予算を加算しません。HueShiftは16M画素の予算内で解像度を自動調整し、変更を `bakeAdjustments` に記録します。形状や時間サンプルは削除しません。
 
 Feather・Drafting・Dark：大量の面を含む作品では、色ごとのページ合計32M画素以内になるまでサンプル数を段階的に減らします（最小16/軸）。形状・色の分離・ミップマップは維持し、細部の解像度変更を記録します。
+
+
+2026年10月25日：Discoでも同一ストロークの繰り返しUVを断面ごとに検証するよう修正。`FunkyXmas-1.glb` を完成形・メッシュ結合ありで12575へ送信成功（21種類、省略なし、7,760アセット）。Disco全8パート・384メッシュアセットと先頭/末尾のURLを確認しました。Python 95テストとParticle・Comet・Keijiro・DanceFloorのUnity検証が成功。作品全体の目視による一致確認は別途必要です。
+
+同作品では容量内に収めるためSnow/Rising Bubblesを約14.5fps、KeijiroTubeを約38.9fpsへ調整し、Cometなどのテクスチャ解像度も下げています。粒数・形状・速度・ループ時間は保持します。完成形のDanceFloorは同じ位相のメッシュを共有し、時間サンプルや見た目を変えずに重複アセットを減らします。
+
+
+2026年10月25日：`Twiste-M.glb` の完成形を12575へ送信成功（30種類、省略なし、5,073アセット）。Snow 89,727粒を元の位相・RGBAごとの256固定メッシュへ集約し、30fps・25秒ループで駆動します。Unityで従来方式の750フレームとの位置誤差0、色・サイズ・UV一致を確認。Resoniteの試験オブジェクトで位置と色が変化すること、本体で256グループと固定メッシュ参照を確認しました。HypercolorとFlowは64×64へ解像度調整しています。全作品の目視による一致確認は別途必要です。

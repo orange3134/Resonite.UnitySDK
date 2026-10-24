@@ -25,10 +25,22 @@ def extract(src, dst, reader_path):
             # UV.x repeats across independent strokes. Never fit different
             # centers/radii together as one cross-section.
             times=reader.accessor(a['_TB_TIMESTAMP'])
-            rings={}
+            ring_groups={}
             for i in range(len(p)):
-                rings.setdefault(tuple(np.r_[times[i,:2],uv[i,0],uv[i,2]]),[]).append(i)
-            for ids in rings.values():
+                ring_groups.setdefault(tuple(np.r_[times[i,:2],uv[i,0],uv[i,2]]),[]).append(i)
+            # UV.x can also repeat within a stroke. Each physical ring is
+            # contiguous and its circumference UV.y runs in one direction.
+            rings=[]
+            for candidates in ring_groups.values():
+                ids=[];direction=0
+                for i in candidates:
+                    step=np.sign(uv[i,1]-uv[ids[-1],1]) if ids else 0
+                    if ids and (i!=ids[-1]+1 or (step and direction and step!=direction)):
+                        rings.append(ids);ids=[];direction=0;step=0
+                    ids.append(i)
+                    if step:direction=step
+                if ids:rings.append(ids)
+            for ids in rings:
                 if len(ids)<4 or uv[ids[0],2]<=0:continue
                 pp=p[ids]-p[ids].mean(0);nn=n[ids]-n[ids].mean(0)
                 if (nn*nn).sum()<1:continue

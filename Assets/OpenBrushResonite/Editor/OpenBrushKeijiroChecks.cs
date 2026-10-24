@@ -22,6 +22,11 @@ public static class OpenBrushKeijiroChecks {
   Check(error<.00001f,"CPU/GPU pulse max error="+error);
  }
  public static void Run(){try {
+  var reduced=OpenBrushKeijiroImport.CompletedSamples(8,63968);
+  Check(reduced.Length==312 && reduced[0]==0 && reduced.Last()==8,"Completed cadence fits budget and retains endpoints");
+  Check(reduced.Zip(reduced.Skip(1),(a,b)=>b>a && b-a<=1f/30+.00001f).All(x=>x),"Completed cadence remains at least 30 fps");
+  Check(OpenBrushKeijiroImport.CompletedSamples(8,100).Length==481,"Small completed scenes keep 60 fps");
+  bool rejected=false;try{OpenBrushKeijiroImport.CompletedSamples(8,20000000);}catch(InvalidOperationException){rejected=true;}Check(rejected,"Minimum cadence respects frame-vertex cap");
   Oracle();const string dir="D:/Document/VerseTV/open-brush-versetv/Support/Exports/parity/bundle-keijiro-v2/";
   var raw=JsonUtility.FromJson<OpenBrushKeijiroImport.Data>(File.ReadAllText(dir+"keijiro.json"));
   var timing=JsonUtility.FromJson<OpenBrushGrowthImport.Data>(File.ReadAllText(dir+"timeline.json"));
@@ -41,6 +46,8 @@ public static class OpenBrushKeijiroChecks {
    Check(motion.Frames[90].triangles.Length>3 && motion.Frames[90].triangles.Length<raw.parts[0].triangles.Length,"partial stroke revealed without future strokes");
    Check(root.GetComponentsInChildren<MeshRenderer>().Where(r=>r.GetComponent<MeshFilter>()!=null&&r.sharedMaterial.GetTag("OpenBrushGuid",false,"")==OpenBrushKeijiroImport.Guid).All(r=>!r.enabled),"original static renderers disabled");
    var profile=OpenBrushProfiles.Find(OpenBrushKeijiroImport.Guid);Check(profile.Specular==0 && profile.SpecularModel && profile.LinearVertexColors,"normal graph uses black specular and decoded paint");
+   var completedFrame=OpenBrushKeijiroImport.Frame(raw.parts[0],new float[raw.parts[0].positions.Length],0);
+   Check(completedFrame.vertexCount==raw.parts[0].positions.Length && completedFrame.triangles.SequenceEqual(raw.parts[0].triangles),"Completed frame retains all original vertices and triangles with no frontier allocations");UnityEngine.Object.DestroyImmediate(completedFrame);
    Check(motion.Frames.All(m=>m.vertices.All(v=>float.IsFinite(v.x)&&float.IsFinite(v.y)&&float.IsFinite(v.z))),"all deformed frames finite");
   }
   Debug.Log("OPENBRUSH_KEIJIRO_CHECKS_PASSED");EditorApplication.Exit(0);

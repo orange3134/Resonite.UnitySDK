@@ -39,8 +39,9 @@ class TubeExtractionTests(unittest.TestCase):
 
 
 class RepeatedRingTests(unittest.TestCase):
+    extractor = 'extract-bubblewand-motion'
     def fixture(self, path, deformed=False):
-        module=load('extract-bubblewand-motion');g=fixture_module.g
+        module=load(self.extractor);g=fixture_module.g
         angle=np.linspace(0,2*np.pi,9)
         ring=np.column_stack((np.cos(angle),np.sin(angle),np.zeros(9)))
         rotation=np.array([[0,0,1],[0,1,0],[-1,0,0]])
@@ -63,7 +64,7 @@ class RepeatedRingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/'in.glb';out=Path(directory)/'out.json'
             original=self.fixture(source)
-            load('extract-bubblewand-motion').extract(source,out,Path(__file__).with_name('animate-brush-glb.py'))
+            load(self.extractor).extract(source,out,Path(__file__).with_name('animate-brush-glb.py'))
             result=json.loads(out.read_text());part=result['parts'][0]
             self.assertAlmostEqual(result['rawRadiusRatioMin'],1,places=6)
             self.assertAlmostEqual(result['rawRadiusRatioMax'],1,places=6)
@@ -76,5 +77,9 @@ class RepeatedRingTests(unittest.TestCase):
             source=Path(directory)/'in.glb';out=Path(directory)/'out.json'
             self.fixture(source,deformed=True)
             with self.assertRaisesRegex(ValueError,'undeformed'):
-                load('extract-bubblewand-motion').extract(source,out,Path(__file__).with_name('animate-brush-glb.py'))
+                load(self.extractor).extract(source,out,Path(__file__).with_name('animate-brush-glb.py'))
             self.assertFalse(out.exists())
+
+
+class DiscoRepeatedRingTests(RepeatedRingTests):
+    extractor = 'extract-disco-motion'

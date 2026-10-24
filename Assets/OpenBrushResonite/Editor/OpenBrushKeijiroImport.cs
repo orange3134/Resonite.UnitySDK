@@ -40,11 +40,27 @@ public static class OpenBrushKeijiroImport {
   mesh.SetVertices(positions);mesh.SetNormals(normals);mesh.SetTangents(tangents);mesh.SetColors(colors);mesh.SetUVs(0,uv);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();
   return mesh;
  }
+ public static float[] CompletedSamples(float duration,long vertices,long limit=20000000) {
+  if(!float.IsFinite(duration) || duration<=0 || vertices<=0 || limit<1)throw new ArgumentOutOfRangeException("Invalid Keijiro completed budget");
+  int desired=Mathf.CeilToInt(duration*Fps)+1;
+  int count=(int)Math.Min(desired,limit/vertices);
+  if(count<Mathf.CeilToInt(duration*30)+1)throw new InvalidOperationException("Keijiro exceeds 20M frame vertices even at 30 fps; split sketch");
+  return Enumerable.Range(0,count).Select(i=>count==desired ? Mathf.Min(i/(float)Fps,duration) : i*duration/(count-1)).ToArray();
+ }
  public static void Prepare(GameObject root,Data data,OpenBrushGrowthImport.Data timing,float[] samples=null) {
   var timeline=root.GetComponent<OpenBrushTimeline>();
   if(timeline==null || timing?.strokes==null || data==null || data.schemaVersion!=1 || data.brushGuid!=Guid || data.coordinateSystem!="UnityInvertZ" || data.parts==null || data.parts.Length==0)
    throw new InvalidOperationException("KeijiroTube needs original radius data and drawing timing");
   var times=samples ?? Enumerable.Range(0,Mathf.CeilToInt(timeline.Duration*Fps)+1).Select(i=>Mathf.Min(i/(float)Fps,timeline.Duration)).ToArray();
+  if(timing.completed && samples==null) {
+   if(data.parts.Any(p=>p?.positions==null))throw new InvalidOperationException("Missing Keijiro positions");
+   var planned=CompletedSamples(timeline.Duration,data.parts.Sum(p=>(long)p.positions.Length));
+   if(planned.Length!=times.Length) {
+    string adjustment="KeijiroTube completed motion reduced from "+times.Length+" to "+planned.Length+" frames to fit 20M frame vertices; all geometry, motion speed and loop duration retained. Motion may be less smooth.";
+    OpenBrushAtlasBudget.Adjustments.Add(adjustment);Debug.LogWarning(adjustment);
+   }
+   times=planned;
+  }
   if(times.Length<2 || times.Any(t=>!float.IsFinite(t)||t<0||t>timeline.Duration) || times.Zip(times.Skip(1),(a,b)=>a<b).Any(v=>!v))throw new InvalidOperationException("Invalid Keijiro sample times");
   if(data.parts.Select(p=>p.nodeName).Distinct().Count()!=data.parts.Length)throw new InvalidOperationException("Repeated Keijiro source node");
   var transforms=root.GetComponentsInChildren<Transform>(true);double budget=0;
@@ -65,7 +81,7 @@ public static class OpenBrushKeijiroImport {
    var strokes=timing.strokes.Where(s=>s.name==p.nodeName).ToArray();var groups=OpenBrushDiscoGrowth.MatchStrokes(p,strokes,timeline.Duration);
    mapped.Add(p,Enumerable.Range(0,n).Select(i=>{var s=strokes[groups[i]];return OpenBrushGrowthImport.Birth(timing,s,p.times[i]);}).ToArray());
    // Indexed frames retain vertices; only cut triangles add intersections.
-   budget+=(double)(n+p.triangles.Length/3*2)*times.Length;
+   budget+=((double)n+(timing.completed?0:p.triangles.Length/3*2))*times.Length;
    if(budget>20000000)throw new InvalidOperationException("Keijiro exceeds 20M frame vertices; split sketch");
   }
   foreach(var p in data.parts) {

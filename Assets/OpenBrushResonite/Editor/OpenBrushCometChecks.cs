@@ -31,6 +31,14 @@ public static class OpenBrushCometChecks {
         Require(Mathf.Abs(dark.r-Mathf.GammaToLinearSpace(.072f)*.5f)<1e-7 && dark.a==1,"Full RGB product decoded; vertex alpha ignored");
         var duplicate=OpenBrushCometImport.Shade(.3f,new Color(.12f,.06f,.18f,1),2);
         Require(Mathf.Abs(duplicate.r-Mathf.GammaToLinearSpace(.144f)*.5f)<1e-7,"Exact duplicate emission sums before gamma decode");
+        var layout=OpenBrushAtlasBudget.Select(256,256,0,1,1,60*16,1,4096,true,33554432);
+        Require(layout.TileWidth==128 && layout.FramePixels<=33554432,"Many Comet colors fit combined frame pixel budget");
+        var frames=OpenBrushCometImport.Bake(pattern,gradient,new Color(.2f,.4f,.6f,1),1,16,16);
+        Require(frames.Length==60 && frames[0].width==16 && frames[0].mipmapCount>1,"Adaptive detail keeps all frames and mipmaps");
+        var expected=OpenBrushCometImport.Shade(OpenBrushCometImport.Intensity(pattern,gradient,4.5f/16,7.5f/16,17/30f),new Color(.2f,.4f,.6f,1),1);
+        var actual=frames[17].GetPixel(4,7);
+        Require(Mathf.Abs(actual.r-expected.r)+Mathf.Abs(actual.g-expected.g)+Mathf.Abs(actual.b-expected.b)<1e-6,"Reduced detail samples original time and color");
+        foreach(var frame in frames)UnityEngine.Object.DestroyImmediate(frame);
         Debug.Log("OPENBRUSH_COMET_CHECKS_PASSED maxGpuError="+maxError+" variation="+variation);EditorApplication.Exit(0);
     }catch(Exception e){Debug.LogException(e);EditorApplication.Exit(1);}}
 }

@@ -30,6 +30,14 @@ public static class OpenBrushHypercolorChecks {
   Check(diffuse.Frames[0].GetPixel(0,0).a==0,"uncovered atlas pixels are transparent, preventing triangle outlines");
   Check(diffuse.FrameTimes.SequenceEqual(spec.FrameTimes),"both texture channels follow identical absolute times");
   Check(child.GetComponentsInChildren<MeshFilter>().Last().sharedMesh.tangents.Length==4,"normal-map tangent basis exists");
+  var adaptive=new GameObject("Adaptive Hypercolor");adaptive.AddComponent<OpenBrushTimeline>().Duration=.7f;
+  var adaptiveChild=new GameObject("Hypercolor_stroke_0000_part_000");adaptiveChild.transform.SetParent(adaptive.transform,false);adaptiveChild.AddComponent<MeshFilter>().sharedMesh=mesh;adaptiveChild.AddComponent<MeshRenderer>().sharedMaterial=material;
+  OpenBrushHypercolorImport.PrepareSamples(adaptive,null,1,300000);
+  var adaptiveMotion=adaptive.GetComponentsInChildren<OpenBrushTextureMotion>();
+  Check(adaptiveMotion.All(m=>m.Frames.Length==22 && m.Frames[0].width==68 && m.Frames[0].height==68 && m.FrameTimes.Last()==.7f),"Adaptive detail retains all 30fps time samples and both animated channels");
+  var adaptiveMesh=adaptiveChild.GetComponentsInChildren<MeshFilter>().Last().sharedMesh;
+  Check(adaptiveMesh.vertices.SequenceEqual(mesh.vertices) && adaptiveMesh.triangles.SequenceEqual(mesh.triangles),"Adaptive chart retains original geometry");
+  Check(Vector2.Distance(adaptiveMesh.uv[0],new Vector2(2.5f/68,2.5f/68))<1e-6 && Vector2.Distance(adaptiveMesh.uv[3],new Vector2(65.5f/68,65.5f/68))<1e-6,"Adaptive UVs map to reduced chart rather than original resolution");
   const string stem="D:/Document/VerseTV/open-brush-versetv/Support/Exports/parity/Hypercolor01-growth-v1";
   using(var data=new AutoGltfFileParser(stem+".glb").Parse())using(var importer=new ImporterContext(data)){
    var instance=importer.Load();instance.ShowMeshes();var model=instance.gameObject;

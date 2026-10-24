@@ -17,10 +17,11 @@ public static class OpenBrushGrowthImport {
         return timeline;
     }
     public static float Birth(Data data,Stroke stroke,float sourceTime) => data.completed ? 0 : Mathf.Lerp(stroke.playStart,stroke.playEnd,Mathf.InverseLerp(stroke.sourceStart,stroke.sourceEnd,sourceTime));
-    static AudioClip CreateDurationClip(float duration) {
+    public static AudioClip CreateDurationClip(float duration,string assetName="BrushGrowthTimeline") {
+        if(!System.Text.RegularExpressions.Regex.IsMatch(assetName,@"^[A-Za-z0-9_-]+$"))throw new ArgumentException("Invalid timeline asset name");
         // File import uses the SDK's supported audio-file path and preserves a reusable asset.
         const int rate=8000;int samples=Mathf.CeilToInt(duration*rate);
-        const string path="Assets/OpenBrushGenerated/BrushGrowthTimeline.wav";
+        string path="Assets/OpenBrushGenerated/"+assetName+".wav";
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         using(var writer=new BinaryWriter(File.Create(path))) {
             writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));writer.Write(36+samples*2);

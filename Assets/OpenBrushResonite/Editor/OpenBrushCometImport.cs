@@ -46,9 +46,10 @@ public static class OpenBrushCometImport {
             Mathf.GammaToLinearSpace(Mathf.Clamp01(intensity*brush.g*copies*2))*.5f,
             Mathf.GammaToLinearSpace(Mathf.Clamp01(intensity*brush.b*copies*2))*.5f,1);
     }
-    public static Texture2D[] Bake(Texture2D pattern,Texture2D gradient,Color color,int copies) {
+    public static Texture2D[] Bake(Texture2D pattern,Texture2D gradient,Color color,int copies,int width=0,int height=0) {
         if(pattern==null || !pattern.isReadable)throw new InvalidOperationException("Comet requires readable source texture");
-        int width=pattern.width,height=pattern.height;
+        if(width==0)width=pattern.width;if(height==0)height=pattern.height;
+        if(width<1 || height<1 || width>pattern.width || height>pattern.height)throw new ArgumentOutOfRangeException("Invalid Comet sample size");
         var frames=new Texture2D[FrameCount];
         for(int f=0;f<frames.Length;f++) {
             var pixels=new Color[width*height];
@@ -66,7 +67,7 @@ public static class OpenBrushCometImport {
         // Preflight before mutating renderers. Standard Open Brush strokes have a
         // constant RGB. Arbitrary imported triangle gradients need a chart bake.
         var inputs=renderers.Select(r=>new{renderer=r,mesh=r.GetComponent<MeshFilter>().sharedMesh,batches=OpenBrushAdditiveImport.Partition(r.GetComponent<MeshFilter>().sharedMesh)}).ToArray();
-        var cache=new Dictionary<(Material,Color,int),Material>();long pixelCount=0;
+        var cache=new Dictionary<(Material,Color,int),Material>();
         foreach(var input in inputs) {
             if(input.renderer.transform.Find("Comet Flow")!=null)throw new InvalidOperationException("Comet already prepared");
             var material=input.renderer.sharedMaterial;var texture=material.mainTexture as Texture2D;
@@ -74,17 +75,26 @@ public static class OpenBrushCometImport {
                 throw new InvalidOperationException("Comet requires its normal material UV transform and readable pattern");
             foreach(var batch in input.batches) {
                 var key=(material,batch.color,batch.copies);
-                if(!cache.ContainsKey(key)){cache.Add(key,null);pixelCount+=(long)texture.width*texture.height*FrameCount;}
+                if(!cache.ContainsKey(key))cache.Add(key,null);
             }
         }
-        if(pixelCount>33554432)throw new InvalidOperationException("Comet motion exceeds 32M frame pixels; split the sketch");
+        var layouts=new Dictionary<(Material,Color,int),OpenBrushAtlasBudget.Layout>();
+        var recorded=new HashSet<(int,int,int,int)>();
+        foreach(var key in cache.Keys) {
+            var texture=key.Item1.mainTexture;
+            var layout=OpenBrushAtlasBudget.Select(texture.width,texture.height,0,1,1,checked(FrameCount*cache.Count),1,SystemInfo.maxTextureSize,true,33554432);
+            layouts.Add(key,layout);
+            if(recorded.Add((texture.width,texture.height,layout.TileWidth,layout.TileHeight)))
+                OpenBrushAtlasBudget.Record("Comet",layout,texture.width,texture.height,FrameCount);
+        }
         var gradient=LoadGradient();cache.Clear();
         foreach(var input in inputs) {
             var group=new GameObject("Comet Flow");group.transform.SetParent(input.renderer.transform,false);
             foreach(var batch in input.batches) {
                 var source=input.renderer.sharedMaterial;var key=(source,batch.color,batch.copies);
                 if(!cache.TryGetValue(key,out var material)) {
-                    var frames=Bake(source.mainTexture as Texture2D,gradient,batch.color,batch.copies);
+                    var layout=layouts[key];
+                    var frames=Bake(source.mainTexture as Texture2D,gradient,batch.color,batch.copies,layout.TileWidth,layout.TileHeight);
                     material=new Material(source){name="Comet_GammaFlow_"+batch.color,mainTexture=frames[0]};material.SetColor("_TintColor",Color.white);
                     var driver=new GameObject("Comet - Three Channel Flow");driver.transform.SetParent(root.transform,false);
                     var motion=driver.AddComponent<OpenBrushTextureMotion>();motion.SourceMaterial=material;motion.Frames=frames;motion.FramesPerSecond=FramesPerSecond;

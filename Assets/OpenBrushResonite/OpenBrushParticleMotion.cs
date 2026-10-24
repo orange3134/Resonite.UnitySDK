@@ -31,7 +31,8 @@ public class OpenBrushParticleMotion : MonoBehaviour {
     // Snow has incommensurate 5 s scroll and 2pi s jitter. A 25 s static loop
     // closes the scroll and bounds the remaining jitter seam to 1.4 mm.
     public float Period => IsDots ? 1 : Kind==BrushKind.Stars ? Mathf.PI/SparkleRate : (Kind==BrushKind.Snow ? 25 : 60);
-    public int StaticFrames => IsDots ? 1 : Kind==BrushKind.Stars ? CycleFrames : (Kind==BrushKind.Snow ? 750 : 1800);
+    public int StaticFrameCountOverride; // Completed-only budget selection; period and particle count stay unchanged.
+    public int StaticFrames => StaticFrameCountOverride>0 ? StaticFrameCountOverride : IsDots ? 1 : Kind==BrushKind.Stars ? CycleFrames : (Kind==BrushKind.Snow ? 750 : 1800);
     public int FrameCount => ExplicitTimes!=null ? ExplicitTimes.Length : Timeline==null ? StaticFrames : Mathf.CeilToInt(Timeline.Duration*60)+1;
     public float Seconds(int frame) => ExplicitTimes!=null ? ExplicitTimes[frame] : Timeline==null ? frame*Period/StaticFrames : Mathf.Min(frame/60f,Timeline.Duration);
     public static float Brightness(float seconds,float seed) => Mathf.Pow(Mathf.Abs(Mathf.Sin(seconds*SparkleRate+seed*2*Mathf.PI)),20);

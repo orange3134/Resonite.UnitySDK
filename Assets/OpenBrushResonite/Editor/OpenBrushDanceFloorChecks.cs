@@ -12,6 +12,13 @@ public static class OpenBrushDanceFloorChecks {
   Check(raw.parts.Length==1 && raw.parts[0].positions.Length==200,"five exported strokes / fifty original quads");
   var p=raw.parts[0];Check(p.colors.Distinct().Count()==5,"five source colors including dark purple");
   Check(p.sourceBirths.Distinct().Count()==1 && p.births.Distinct().Count()>20,"loaded-sketch shader phase differs from drawing reveal timestamps");
+  var testSurface=new OpenBrushDanceFloorSurface.Surface{palette=new int[p.positions.Length],columns=60,width=600,height=10,tw=10,th=10,sourceWidth=2,sourceHeight=2};
+  float origin=p.sourceBirths.Min();
+  var completed=OpenBrushDanceFloorImport.BakeFrames(p,new float[p.positions.Length/4],origin,new[]{0f,.2f,1f,1.2f},testSurface,true);
+  Check(completed[0]==completed[2] && completed[1]==completed[3] && completed[0]!=completed[1],"Completed repeated phases share identical mesh assets");
+  var reference=OpenBrushDanceFloorImport.Frame(p,new float[p.positions.Length/4],origin,1.2f,testSurface);
+  Check(completed[3].vertices.SequenceEqual(reference.vertices) && completed[3].uv.SequenceEqual(reference.uv) && completed[3].triangles.SequenceEqual(p.triangles),"Shared frames preserve every quad, position and surface phase");
+  foreach(var mesh in completed.Distinct())UnityEngine.Object.DestroyImmediate(mesh);UnityEngine.Object.DestroyImmediate(reference);
   foreach(float x in new[]{-.137f,-.001f,.001f,.139f}) {
    var pos=new Vector3(x,1.713f,-.013f);var normal=new Vector3(.2f,.3f,.9327379f);
    var result=OpenBrushDanceFloorImport.Position(pos,normal,.729f);

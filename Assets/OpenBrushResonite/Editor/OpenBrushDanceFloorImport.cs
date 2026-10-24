@@ -27,6 +27,19 @@ public static class OpenBrushDanceFloorImport {
   var mesh=new Mesh{name="DanceFloor_"+time,indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,vertices=vertices,uv=uv,normals=p.normals,colors=Enumerable.Repeat(Color.white,vertices.Length).ToArray()};
   mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();return mesh;
  }
+ // A completed grid repeats exactly when every source phase matches. Share
+ // those meshes across timeline cycles instead of rebaking identical geometry.
+ public static string PhaseKey(Part p,float origin,float time) => string.Join(",",p.sourceBirths.Distinct().Select(b=>Phase(time,b-origin)));
+ public static Mesh[] BakeFrames(Part p,float[] births,float origin,float[] times,OpenBrushDanceFloorSurface.Surface surface,bool completed) {
+  if(completed && births.Any(b=>b!=0))throw new InvalidOperationException("Completed DanceFloor must have no pending births");
+  var cache=new Dictionary<string,Mesh>();
+  return times.Select(t=>{
+   if(!completed)return Frame(p,births,origin,t,surface);
+   string key=PhaseKey(p,origin,t);
+   if(!cache.TryGetValue(key,out var mesh)){mesh=Frame(p,births,origin,t,surface);cache.Add(key,mesh);}
+   return mesh;
+  }).ToArray();
+ }
  public static void Prepare(GameObject root,Data data,OpenBrushGrowthImport.Data timing) {
   var timeline=root.GetComponent<OpenBrushTimeline>();
   if(timeline==null || timing?.strokes==null || data==null || data.schemaVersion!=1 || data.brushGuid!=Guid || data.coordinateSystem!="UnityInvertZ" || data.appUnitsPerMeter!=10 || data.parts==null || data.parts.Length==0)throw new InvalidOperationException("DanceFloor requires original normals, birth phases and drawing timestamps");
@@ -53,7 +66,8 @@ public static class OpenBrushDanceFloorImport {
    var times=new SortedSet<float>{0,timeline.Duration};foreach(var b in births)times.Add(b);
    foreach(var phase in p.sourceBirths.Select(b=>Mathf.Repeat(b-origin,1)).Distinct())
     for(int k=0;k<=Mathf.CeilToInt(timeline.Duration*Rate);k++){float t=phase+k/(float)Rate;if(t<=timeline.Duration)times.Add(t);}
-   budget+=(double)n*times.Count;if(budget>20000000)throw new InvalidOperationException("DanceFloor exceeds 20M frame vertices; split the sketch");
+   int meshCount=timing.completed ? times.Select(t=>PhaseKey(p,origin,t)).Distinct().Count() : times.Count;
+   budget+=(double)n*meshCount;if(budget>20000000)throw new InvalidOperationException("DanceFloor exceeds 20M frame vertices; split the sketch");
    mapped.Add(p,births);samples.Add(p,times.ToArray());
   }
   float phaseOrigin=data.parts.Min(p=>p.sourceBirths.Min());long surfaceBudget=0;
@@ -61,7 +75,7 @@ public static class OpenBrushDanceFloorImport {
    var parent=transforms.Single(t=>t.name==p.nodeName);var renderers=parent.GetComponentsInChildren<MeshRenderer>(true);
    var surface=OpenBrushDanceFloorSurface.Build(p,renderers[0].sharedMaterial,ref surfaceBudget);
    var child=new GameObject("DanceFloor - Timed Grid Pulse");child.transform.SetParent(parent,false);
-   var motion=child.AddComponent<OpenBrushGeometryMotion>();motion.SourceMaterial=surface.material;motion.Timeline=timeline;motion.FrameTimes=samples[p];motion.Frames=motion.FrameTimes.Select(t=>Frame(p,mapped[p],phaseOrigin,t,surface)).ToArray();
+   var motion=child.AddComponent<OpenBrushGeometryMotion>();motion.SourceMaterial=surface.material;motion.Timeline=timeline;motion.FrameTimes=samples[p];motion.Frames=BakeFrames(p,mapped[p],phaseOrigin,motion.FrameTimes,surface,timing.completed);
    foreach(var r in renderers)r.enabled=false;
    Debug.Log("DANCEFLOOR_BAKE quads="+mapped[p].Length+" frames="+motion.Frames.Length+" vertices="+p.positions.Length);
   }
