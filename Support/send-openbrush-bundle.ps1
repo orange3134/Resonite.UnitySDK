@@ -45,5 +45,9 @@ $result = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
 if ($sendProcess.ExitCode -ne 0 -or -not $result.completed) {
     throw "送信失敗: $($result.error)`nReport: $reportPath`nLog: $logPath"
 }
-$result | Select-Object name,completed,mode,rootId,playbackId,duration,effectLoopSeconds,growthPartCount,boundsCenter,boundsSize,bakeAdjustments,meshCombine,assetCount,preparationSeconds,sendSeconds
-Write-Host '送信完了 (completed: True)'
+foreach ($warning in $result.warnings) {
+    Write-Warning ("未対応のため省略: {0} [{1}] ({2}プリミティブ)" -f $warning.name, $warning.guid, $warning.primitiveCount)
+}
+$result | Select-Object name,completed,mode,rootId,playbackId,duration,effectLoopSeconds,growthPartCount,boundsCenter,boundsSize,warnings,bakeAdjustments,meshCombine,assetCount,preparationSeconds,sendSeconds
+if ($result.warnings.Count -gt 0) { Write-Host '送信完了（一部省略） (completed: True)' }
+else { Write-Host '送信完了 (completed: True)' }

@@ -10,7 +10,9 @@ using UnityEngine;
 public sealed class OpenBrushConversionBundle {
  [Serializable] public class Files {public string model,materials,timeline,disco,particles,electricity,hypergrid,dancefloor,keijiro,bubblewand,waveformparticles;}
  [Serializable] public class Hash {public string path,sha256;}
- [Serializable] public class Data {public int schemaVersion;public Files files;public Hash[] hashes;}
+ [Serializable] public class Warning {public string code,guid,name;public int primitiveCount;}
+ public Warning[] Warnings {get;private set;}=Array.Empty<Warning>();
+ [Serializable] public class Data {public int schemaVersion;public Files files;public Hash[] hashes;public Warning[] warnings;}
  readonly Dictionary<string,string> paths=new Dictionary<string,string>();
  public bool Has(string argument)=>paths.ContainsKey(argument);
  public string Get(string argument)=>paths[argument];
@@ -26,7 +28,7 @@ public sealed class OpenBrushConversionBundle {
    string hash;using(var sha=SHA256.Create())using(var file=File.OpenRead(path))hash=BitConverter.ToString(sha.ComputeHash(file)).Replace("-","").ToLowerInvariant();
    if(!string.Equals(hash,entry.sha256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Bundle file changed or mismatched: "+entry.path);
   }
-  var result=new OpenBrushConversionBundle();
+  var result=new OpenBrushConversionBundle {Warnings=data.warnings ?? Array.Empty<Warning>()};
   result.Add(root,verified,"-openbrushModel",data.files.model,true);
   result.Add(root,verified,"-openbrushManifest",data.files.materials,true);
   result.Add(root,verified,"-openbrushTimeline",data.files.timeline,true);

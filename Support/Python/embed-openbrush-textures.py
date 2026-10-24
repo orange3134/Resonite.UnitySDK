@@ -59,12 +59,12 @@ def resolve_texture(source, uri, brush_assets):
     return contained_file(Path(source).parent, parsed.path)
 
 
-def embed(source, destination, brush_assets):
+def embed(source, destination, brush_assets, *, image_source=None):
     source, destination = Path(source), Path(destination)
     if source.resolve() == destination.resolve() or destination.exists():
         raise ValueError('Use a new output file for localized textures')
-    root = Path(brush_assets).resolve()
-    if not root.is_dir():
+    root = Path(brush_assets).resolve() if brush_assets is not None else None
+    if root is not None and not root.is_dir():
         raise ValueError('--brush-assets must be an existing Support/shaders/brushes directory: ' + str(root))
     doc, binary = read_glb(source)
     count = 0
@@ -72,7 +72,7 @@ def embed(source, destination, brush_assets):
         uri = image.get('uri', '')
         if not uri or uri.startswith('data:'):
             continue
-        path = resolve_texture(source, uri, root)
+        path = resolve_texture(image_source or source, uri, root)
         data = path.read_bytes()
         if data.startswith(b'\x89PNG\r\n\x1a\n'):
             mime = 'image/png'

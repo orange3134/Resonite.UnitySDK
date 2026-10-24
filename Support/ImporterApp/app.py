@@ -15,6 +15,7 @@ MUTED = '#708079'
 ACCENT = '#176B52'
 LINE = '#D9DED5'
 ERROR = '#A33B2B'
+WARNING = '#805610'
 
 
 class App:
@@ -29,6 +30,7 @@ class App:
         self.run_dir = None
         self.indeterminate = False
         self.stage = 'idle'
+        self.warnings = []
         self.source = tk.StringVar(value=self.settings['source'])
         self.port = tk.StringVar(value=self.settings['port'])
         self.animated = tk.BooleanVar(value=self.settings['animated'])
@@ -110,8 +112,11 @@ class App:
         self.detail = ttk.Label(frame, text='', foreground=MUTED, wraplength=640, justify='left')
         self.detail.grid(row=9, column=0, sticky='nw', pady=(8, 8))
         frame.rowconfigure(9, weight=1)
+        self.warning_label = ttk.Label(frame, text='', foreground=WARNING, wraplength=640, justify='left')
+        self.warning_label.grid(row=10, column=0, sticky='ew', pady=(0, 8))
+        self.warning_label.grid_remove()
         footer = ttk.Frame(frame)
-        footer.grid(row=10, column=0, sticky='ew')
+        footer.grid(row=11, column=0, sticky='ew')
         self.log_button = ttk.Button(footer, text='ログ', command=self.logs, padding=(12, 5), state='disabled')
         self.log_button.pack(side='left')
         self.stop_button = ttk.Button(footer, text='中止', command=self.cancel, padding=(12, 5), state='disabled')
@@ -154,6 +159,8 @@ class App:
             self.status.configure(text='入力を確認してください', foreground=ERROR)
             self.detail.configure(text=str(error), foreground=ERROR)
             return
+        self.warnings = []
+        self.show_warnings()
         self.busy, self.started, self.run_dir = True, time.monotonic(), None
         for widget in self.inputs:
             widget.state(['disabled'])
@@ -166,7 +173,28 @@ class App:
         self.thread = threading.Thread(target=self.pipeline.run, args=(settings,), daemon=False)
         self.thread.start()
 
+    def show_warnings(self):
+        if not self.warnings:
+            self.warning_label.grid_remove()
+            return
+        names = [entry.get('name') or entry.get('guid') or 'ブラシ不明' for entry in self.warnings]
+        short = [name[:32] + ('…' if len(name) > 32 else '') for name in names[:3]]
+        suffix = f' ほか{len(names)-3}件' if len(names) > 3 else ''
+        self.warning_label.configure(text='未対応のため省略: ' + '、'.join(short) + suffix + '\n詳細はログに保存しています。')
+        self.warning_label.grid()
+
     def apply_event(self, event):
+        if event['stage'] == 'warning':
+            entry = event.get('warning')
+            if entry and entry not in self.warnings:
+                self.warnings.append(entry)
+            self.show_warnings()
+            return  # Keep the current phase/progress while the job continues.
+        if event['stage'] == 'done':
+            for entry in event.get('report', {}).get('warnings') or []:
+                if entry not in self.warnings:
+                    self.warnings.append(entry)
+            self.show_warnings()
         self.stage = event['stage']
         if event.get('run_dir'):
             self.run_dir = Path(event['run_dir'])
@@ -186,6 +214,8 @@ class App:
         else:
             self.bar.configure(mode='determinate', value=0)
         self.status.configure(text=event.get('detail', ''), foreground=ERROR if self.stage == 'error' else INK)
+        if self.stage == 'done' and self.warnings:
+            self.status.configure(text='読み込み完了（一部省略）')
         if total > 0:
             self.detail.configure(text=f'{current:,} / {total:,}   {current / total:.0%}', foreground=MUTED)
         elif self.stage == 'done':

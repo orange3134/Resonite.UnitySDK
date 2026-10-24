@@ -98,6 +98,31 @@ class DesktopTests(unittest.TestCase):
         self.assertIn('100 → 12', self.ui.detail['text'])
         self.assertTrue(backend.read_settings(self.sdk)['combine_meshes'])
 
+    def test_warning_persists_across_progress_and_partial_success_then_resets(self):
+        warning = dict(code='unsupported_brush', name='CandyCane', guid='unknown', primitiveCount=2)
+        self.ui.apply_event(dict(stage='convert', detail='変換中', current=1, total=2))
+        self.ui.apply_event(dict(stage='warning', warning=warning))
+        self.assertEqual(self.ui.stage, 'convert')
+        self.assertEqual(float(self.ui.bar['value']), 50)
+        self.assertIn('CandyCane', self.ui.warning_label['text'])
+        self.ui.apply_event(dict(stage='send', detail='送信中'))
+        self.assertIn('CandyCane', self.ui.warning_label['text'])
+        self.ui.apply_event(dict(stage='done', detail='読み込み完了', report=dict(warnings=[warning])))
+        self.assertEqual(len(self.ui.warnings), 1)
+        self.assertEqual(self.ui.status['text'], '読み込み完了（一部省略）')
+        self.assertEqual(float(self.ui.bar['value']), 100)
+        self.ui.start_button.invoke()
+        self.assertEqual(self.ui.warnings, [])
+        self.assertFalse(self.ui.warning_label.winfo_manager())
+        self.release.set()
+        self.wait(lambda: not self.ui.busy)
+
+    def test_many_warnings_keep_layout_bounded_and_full_records(self):
+        for index in range(20):
+            self.ui.apply_event(dict(stage='warning', warning=dict(name='Brush' + str(index))))
+        self.assertEqual(len(self.ui.warnings), 20)
+        self.assertIn('ほか17件', self.ui.warning_label['text'])
+
     def test_file_picker_and_bad_port_do_not_launch(self):
         with mock.patch.object(app.filedialog, 'askopenfilename', return_value='C:/新しい絵.glb'):
             self.ui.browse_button.invoke()

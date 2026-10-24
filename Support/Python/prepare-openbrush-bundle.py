@@ -71,7 +71,7 @@ def staging_directory(destination):
 
 def prepare(source, destination, *, sdk_root=SDK, speed=1., lead=1., hold=3.,
             max_gap=None, slices_per_second=30., max_slices=96, brush_assets=None,
-            completed=False, effect_loop_seconds=8., progress=None):
+            completed=False, effect_loop_seconds=8., progress=None, warning=None):
     source, destination = Path(source).resolve(), Path(destination).resolve()
     if destination.exists():
         raise FileExistsError('Output directory already exists: ' + str(destination))
@@ -89,14 +89,14 @@ def prepare(source, destination, *, sdk_root=SDK, speed=1., lead=1., hold=3.,
         progress('ブラシを確認中', 0, 0)
     growth = load('animate-brush-glb')
     raw = growth.Reader(source)
-    brushes = set()
-    for material in raw.doc.get('materials', []):
-        guid = material.get('extensions', {}).get('GOOGLE_tilt_brush_material', {}).get('guid')
-        if guid not in profiles:
-            raise ValueError('Unsupported or missing original brush GUID: ' + str(guid) + ' (' + material.get('name', '') + ')')
-        brushes.add(guid)
+    filtering = load('filter-unsupported-brushes')
+    brushes, warnings = filtering.filter_document(raw.doc, profiles)
+    for entry in warnings:
+        if warning:
+            warning(entry)
     if not brushes:
-        raise ValueError('The sketch contains no brush materials')
+        names = ', '.join(entry['name'] for entry in warnings)
+        raise ValueError('Unsupported brushes only: 変換できるブラシがありません。' + names)
     textures = load('embed-openbrush-textures')
     needs_local_textures = textures.has_remote_images(raw.doc)
     if needs_local_textures and brush_assets is None:
@@ -109,35 +109,37 @@ def prepare(source, destination, *, sdk_root=SDK, speed=1., lead=1., hold=3.,
         if stage.parent != destination.parent or stage == destination:
             raise RuntimeError('Unexpected temporary directory location')
         files = dict(model='drawing.glb', materials='materials.json', timeline='timeline.json')
-        texture_source = source
+        filtered_source = stage / 'filtered-intermediate.glb'
+        filtering.save(raw, filtered_source)
+        texture_source = filtered_source
         localized_count = 0
-        if needs_local_textures:
+        if any(image.get('uri') and not image['uri'].startswith('data:') for image in raw.doc.get('images', [])):
             texture_source = stage / 'textures-intermediate.glb'
-            localized_count = textures.embed(source, texture_source, brush_assets)
+            localized_count = textures.embed(filtered_source, texture_source, brush_assets, image_source=source)
         if progress:
             progress('ブラシ効果を抽出中', 0, 0)
         # Extract raw records BEFORE slicing or any static deformation.
         if '6a1cf9f9-032c-45ec-9b6e-a6680bee30f7' in brushes:
             files['waveformparticles'] = 'waveformparticles.json'
-            load('extract-waveform-particles').extract(source, stage / files['waveformparticles'], HERE / 'animate-brush-glb.py')
+            load('extract-waveform-particles').extract(filtered_source, stage / files['waveformparticles'], HERE / 'animate-brush-glb.py')
         if BUBBLEWAND in brushes:
             files['bubblewand'] = 'bubblewand.json'
-            load('extract-bubblewand-motion').extract(source, stage / files['bubblewand'], HERE / 'animate-brush-glb.py')
+            load('extract-bubblewand-motion').extract(filtered_source, stage / files['bubblewand'], HERE / 'animate-brush-glb.py')
         if KEIJIRO in brushes:
             files['keijiro'] = 'keijiro.json'
-            load('extract-keijiro-motion').extract(source, stage / files['keijiro'], HERE / 'animate-brush-glb.py')
+            load('extract-keijiro-motion').extract(filtered_source, stage / files['keijiro'], HERE / 'animate-brush-glb.py')
         if DISCO in brushes:
             files['disco'] = 'disco.json'
-            load('extract-disco-motion').extract(source, stage / files['disco'], HERE / 'animate-brush-glb.py')
+            load('extract-disco-motion').extract(filtered_source, stage / files['disco'], HERE / 'animate-brush-glb.py')
         if ELECTRICITY in brushes:
             files['electricity'] = 'electricity.json'
-            load('extract-electricity-motion').extract(source, stage / files['electricity'], HERE / 'animate-brush-glb.py')
+            load('extract-electricity-motion').extract(filtered_source, stage / files['electricity'], HERE / 'animate-brush-glb.py')
         if HYPERGRID in brushes:
             files['hypergrid'] = 'hypergrid.json'
-            load('extract-hypergrid-motion').extract(source, stage / files['hypergrid'], HERE / 'animate-brush-glb.py')
+            load('extract-hypergrid-motion').extract(filtered_source, stage / files['hypergrid'], HERE / 'animate-brush-glb.py')
         if DANCEFLOOR in brushes:
             files['dancefloor'] = 'dancefloor.json'
-            load('extract-dancefloor-motion').extract(source, stage / files['dancefloor'], HERE / 'animate-brush-glb.py')
+            load('extract-dancefloor-motion').extract(filtered_source, stage / files['dancefloor'], HERE / 'animate-brush-glb.py')
         if brushes & PARTICLES:
             files['particles'] = 'particles.json'
             write_json(stage / files['particles'], load('extract-particle-motion').extract(raw))
@@ -172,16 +174,17 @@ def prepare(source, destination, *, sdk_root=SDK, speed=1., lead=1., hold=3.,
         report['input'], report['output'] = str(source), files['model']
         report['lightWireShapeBaked'] = LIGHTWIRE in brushes
         report['localizedTextureCount'] = localized_count
+        report['warnings'] = warnings
         report['mode'] = 'completed' if completed else 'animated'
         report['effectLoopSeconds'] = effect_loop_seconds if completed else 0
         if completed:
             report['durationSeconds'] = 0
         write_json(stage / 'conversion-report.json', report)
-        for intermediate in {geometry, texture_source} - {source}:
+        for intermediate in {geometry, texture_source, filtered_source}:
             intermediate.unlink()  # Only files created in this private directory.
         if progress:
             progress('変換結果を検証中', 0, 0)
-        bundle = dict(schemaVersion=1, files=files, source=dict(name=source.name, sha256=sha256(source)),
+        bundle = dict(schemaVersion=1, files=files, warnings=warnings, source=dict(name=source.name, sha256=sha256(source)),
                       brushes=[dict(guid=g, name=profiles[g]) for g in sorted(brushes)],
                       mode=report['mode'], effectLoopSeconds=report['effectLoopSeconds'],
                       duration=report['durationSeconds'], growthParts=0 if completed else len(segments),
@@ -220,12 +223,16 @@ def main():
             return
         last_progress[0] = now
         print('OPENBRUSH_PROGRESS ' + json.dumps(dict(stage='convert', detail=detail, current=current, total=total), ensure_ascii=False), flush=True)
+    def warning(entry):
+        print('警告: 未対応ブラシをスキップ: ' + entry['name'] + ' [' + (entry['guid'] or 'GUIDなし') + ']', file=sys.stderr, flush=True)
+        if args.progress_json:
+            print('OPENBRUSH_PROGRESS ' + json.dumps(dict(stage='warning', warning=entry), ensure_ascii=False), flush=True)
     try:
         bundle = prepare(args.source, args.destination, sdk_root=args.sdk_root, speed=args.speed,
                          lead=args.lead_in, hold=args.hold, max_gap=args.max_gap,
                          slices_per_second=args.slices_per_second, max_slices=args.max_slices,
                          brush_assets=args.brush_assets, completed=args.completed,
-                         effect_loop_seconds=args.effect_loop_seconds, progress=progress if args.progress_json else None)
+                         effect_loop_seconds=args.effect_loop_seconds, progress=progress if args.progress_json else None, warning=warning)
     except MemoryError:
         parser.exit(1, 'Preparation failed: Not enough memory to convert this sketch. '
                     'Use 64-bit Python, close memory-heavy applications, or split the sketch.\n')
@@ -235,7 +242,7 @@ def main():
                           brushes=[b['name'] for b in bundle['brushes']], mode=bundle['mode'],
                           effectLoopSeconds=bundle['effectLoopSeconds'],
                           duration=bundle['duration'], growthParts=bundle['growthParts'],
-                          files=bundle['files']), ensure_ascii=False, indent=2))
+                          files=bundle['files'], warnings=bundle['warnings']), ensure_ascii=False, indent=2))
 
 
 if __name__ == '__main__':

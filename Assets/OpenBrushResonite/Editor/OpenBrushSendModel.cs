@@ -14,6 +14,7 @@ using UniGLTF;
 public static class OpenBrushSendModel {
     [Serializable] public class Report {
         public OpenBrushCompletedMeshCombine.Report meshCombine;
+        public OpenBrushConversionBundle.Warning[] warnings;
         public int assetCount;
         public double preparationSeconds,sendSeconds;
         public string name,endpoint,rootId,error,mode;public float effectLoopSeconds; public string[] assetRootIds,brushes,bakeAdjustments;
@@ -41,6 +42,8 @@ public static class OpenBrushSendModel {
             if(File.Exists(output))throw new InvalidOperationException("Inspect and archive the previous send report before retrying.");
             OpenBrushImportProgress.Start(Has("-openbrushProgress") ? Arg("-openbrushProgress") : null);
             OpenBrushImportProgress.Write("unity","変換済みデータを確認中");
+            report.warnings=bundle?.Warnings ?? Array.Empty<OpenBrushConversionBundle.Warning>();
+            foreach(var warning in report.warnings)Debug.LogWarning("Skipped unsupported brush: "+warning.name+" ["+warning.guid+"]");
             report.name=Arg("-openbrushName");report.endpoint="ws://localhost:"+int.Parse(Arg("-openbrushPort"));
             var manifest=JsonUtility.FromJson<OpenBrushSmokeImport.Manifest>(File.ReadAllText(Arg("-openbrushManifest")));
             if(manifest?.materials==null || manifest.materials.Length==0)throw new InvalidOperationException("Empty manifest");
