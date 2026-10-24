@@ -6,7 +6,23 @@ using UnityEditor;
 using UniGLTF;
 public static class OpenBrushSoftFragmentChecks {
  static void Check(bool ok,string why){if(!ok)throw new InvalidOperationException(why);Debug.Log("Soft fragment check: "+why);}
- public static void Run(){try {
+ static void Adaptive() {
+  var root=new GameObject("AdaptiveFeatherCheck");var child=new GameObject("Feather");child.transform.SetParent(root.transform,false);
+  var texture=new Texture2D(64,64,TextureFormat.RGBA32,false,true);texture.SetPixels(Enumerable.Repeat(Color.white,4096).ToArray());texture.Apply();
+  var vertices=new[]{Vector3.zero,Vector3.right,Vector3.up};
+  var mesh=new Mesh{vertices=vertices,colors=Enumerable.Repeat(Color.red,3).ToArray(),uv=new[]{Vector2.zero,Vector2.right,Vector2.up},triangles=new[]{0,1,2}};
+  child.AddComponent<MeshFilter>().sharedMesh=mesh;var renderer=child.AddComponent<MeshRenderer>();
+  var material=new Material(Shader.Find("OpenBrush/ExportedBrush")){mainTexture=texture};material.SetOverrideTag("OpenBrushGuid",OpenBrushSoftFragmentImport.Feather);renderer.sharedMaterial=material;
+  int before=OpenBrushAtlasBudget.Adjustments.Count;
+  OpenBrushSoftFragmentImport.Prepare(root,4096);
+  var result=child.transform.GetChild(0).GetComponent<MeshRenderer>();var atlas=(Texture2D)result.sharedMaterial.mainTexture;var output=result.GetComponent<MeshFilter>().sharedMesh;
+  Check((long)atlas.width*atlas.height<=4096 && OpenBrushAtlasBudget.Adjustments.Count==before+1,"adaptive page respects budget and reports detail change");
+  Check(output.vertexCount==3 && output.vertices.ToHashSet().SetEquals(vertices) && mesh.vertices.SequenceEqual(vertices) && !renderer.enabled,"adaptive page retains every source vertex");
+  var uv=output.uv;var center=(uv[0]+uv[1]+uv[2])/3;var color=atlas.GetPixelBilinear(center.x,center.y);
+  Check(color.r>.99f && color.g<.001f && color.b<.001f,"adaptive page retains painted emission");
+  UnityEngine.Object.DestroyImmediate(root);
+ }
+ public static void Run(){try {Adaptive();
   var texture=new Texture2D(1,1,TextureFormat.RGBAFloat,false,true);texture.SetPixel(0,0,new Color(.3f,.4f,.5f,.25f));texture.Apply();
   var face=new OpenBrushHighlighterImport.Face{copies=2,uv=new[]{Vector2.zero,Vector2.right,Vector2.up},colors=new[]{new Color(.2f,.4f,.6f,.2f),new Color(.6f,.2f,.3f,.8f),new Color(.1f,.7f,.4f,.5f)}};
   var sample=OpenBrushSoftFragmentImport.Sample(texture,face,.2f,.3f,Vector2.one,Vector2.zero);

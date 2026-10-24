@@ -68,9 +68,12 @@ public static class OpenBrushHueShiftImport {
   }
   int tileWidth=faceMode?64:Width,tileHeight=faceMode?64:Height;
   int columns=Mathf.CeilToInt(Mathf.Sqrt(charts.Count)),rows=Mathf.CeilToInt(charts.Count/(float)columns);
-  int width=columns*(tileWidth+2*Padding),height=rows*(tileHeight+2*Padding),chartIndex=0;
-  if(width>SystemInfo.maxTextureSize || height>SystemInfo.maxTextureSize || (long)width*height>16777216)throw new InvalidOperationException("HueShift atlas exceeds 16M pixels; split this sketch");
+  var layout=OpenBrushAtlasBudget.Select(tileWidth,tileHeight,Padding,columns,rows,1,1,SystemInfo.maxTextureSize,true,16777216);
+  OpenBrushAtlasBudget.Record(faceMode?"HueShift per-face":"HueShift",layout,tileWidth,tileHeight,1);
+  tileWidth=layout.TileWidth;tileHeight=layout.TileHeight;
+  int width=layout.Width,height=layout.Height,chartIndex=0;
   foreach(var chart in charts.Values) {
+   chart.width=tileWidth;chart.height=tileHeight;
    var uv=chart.pieces.SelectMany(p=>p.chartUV ?? p.mesh.uv).ToArray();
    chart.min=new Vector2(uv.Min(v=>v.x),uv.Min(v=>v.y));chart.max=new Vector2(uv.Max(v=>v.x),uv.Max(v=>v.y));
    if(chart.max.x-chart.min.x<1e-6 || chart.max.y-chart.min.y<1e-6)throw new InvalidOperationException("Degenerate HueShift UV chart");

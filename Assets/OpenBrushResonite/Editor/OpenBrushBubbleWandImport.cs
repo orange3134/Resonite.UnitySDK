@@ -86,8 +86,10 @@ public static class OpenBrushBubbleWandImport {
    if((rawBounds.min-imported.min).magnitude>1e-4 || (rawBounds.max-imported.max).magnitude>1e-4)throw new InvalidOperationException("BubbleWand raw and prepared coordinates differ");
    var strokes=timing.strokes.Where(s=>s.name==p.nodeName).ToArray();var groups=OpenBrushDiscoGrowth.MatchStrokes(p,strokes,timeline.Duration);
    mapped.Add(p,Enumerable.Range(0,n).Select(i=>{var s=strokes[groups[i]];return OpenBrushGrowthImport.Birth(timing,s,p.times[i]);}).ToArray());
-   // Indexed frames retain vertices; only cut triangles add intersections.
-   budget+=(double)(n+p.triangles.Length/3*2)*times.Length*ColorGroups(p).Count();
+   // Completed-mode Birth() is zero for every vertex, including frame zero.
+   // It never clips triangles or creates frontier vertices. Animated mode
+   // still reserves two intersections per face at the drawing boundary.
+   budget+=((double)n+(timing.completed?0:p.triangles.Length/3*2))*times.Length*ColorGroups(p).Count();
    if(budget>20000000)throw new InvalidOperationException("BubbleWand exceeds 20M frame vertices; split sketch");
   }
   foreach(var p in data.parts) {

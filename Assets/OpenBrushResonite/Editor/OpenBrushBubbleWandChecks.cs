@@ -25,6 +25,8 @@ public static class OpenBrushBubbleWandChecks {
   var p=new OpenBrushBubbleWandImport.Part{positions=new[]{Vector3.zero,Vector3.right,Vector3.up},normals=Enumerable.Repeat(Vector3.forward,3).ToArray(),uvRadius=Enumerable.Repeat(new Vector3(.5f,0,.1f),3).ToArray(),colors=Enumerable.Repeat(Color.red,3).ToArray(),tangents=Enumerable.Repeat(new Vector4(1,0,0,1),3).ToArray(),triangles=new[]{0,1,2}};
   var birth=new[]{1f,2f,2f};var blank=OpenBrushBubbleWandImport.Frame(p,birth,0);var partial=OpenBrushBubbleWandImport.Frame(p,birth,1.5f);var full=OpenBrushBubbleWandImport.Frame(p,birth,3);var later=OpenBrushBubbleWandImport.Frame(p,birth,4);
   Check(blank.triangles.All(v=>v==0),"Blank lead is retained");Check(partial.vertexCount>3,"Stroke frontier interpolates original vertices");
+  var completed=OpenBrushBubbleWandImport.Frame(p,new float[3],0);
+  Check(completed.vertexCount==p.positions.Length && completed.triangles.SequenceEqual(p.triangles),"Completed first frame needs no frontier vertices");
   Check(full.triangles.SequenceEqual(p.triangles),"Completed frame preserves topology");Check(full.vertices[0]!=later.vertices[0],"Curl motion survives completed mode");
   Check(Mathf.Abs(full.vertices[0].z-.1f)<.002f,"Radius is meters, not a tenfold bulge");Check(full.normals.All(n=>Mathf.Abs(n.magnitude-1)<1e-5),"Normals stay normalized");
   var tex=new Texture2D(2,2,TextureFormat.RGBA32,false,true);tex.SetPixels(new[]{Color.red,Color.green,Color.blue,Color.white});tex.Apply();
@@ -57,6 +59,12 @@ public static class OpenBrushBubbleWandChecks {
   var motion=root.GetComponentInChildren<OpenBrushTextureMotion>();Check(motion.Frames.Length==2,"Flow timing preserved");
   UnityEngine.Object.DestroyImmediate(root);
  }
+ static void HueBudget() {
+  var small=OpenBrushAtlasBudget.Select(64,64,2,2,2,1,1,8192,true,16777216);
+  Check(small.TileWidth==64,"Small face atlases retain full detail");
+  var large=OpenBrushAtlasBudget.Select(64,64,2,71,71,1,1,8192,true,16777216);
+  Check(large.TileWidth==32 && large.FramePixels<=16777216,"Large face atlas fits without dropping geometry");
+ }
  static void OverlappingHue() {
   var root=new GameObject("HueOverlapCheck");var child=new GameObject("brush_Lofted_stroke_0000_part_000");child.transform.SetParent(root.transform,false);
   var mesh=new Mesh{vertices=new[]{Vector3.zero,Vector3.right,Vector3.up,Vector3.forward,Vector3.forward+Vector3.right,Vector3.forward+Vector3.up},normals=Enumerable.Repeat(Vector3.forward,6).ToArray(),colors=new[]{Color.red,Color.red,Color.red,Color.blue,Color.blue,Color.blue},uv=new[]{Vector2.zero,Vector2.right,Vector2.up,Vector2.zero,Vector2.right,Vector2.up},triangles=Enumerable.Range(0,6).ToArray()};
@@ -71,5 +79,5 @@ public static class OpenBrushBubbleWandChecks {
   Check(tex.GetPixelBilinear(auv.x,auv.y)!=tex.GetPixelBilinear(buv.x,buv.y),"Different face paint survives GPU bake");
   UnityEngine.Object.DestroyImmediate(root);
  }
- public static void Run(){try{Oracle();Frames();DiscoAtlas();FlatFlow();OverlappingHue();Debug.Log("OPENBRUSH_BUBBLEWAND_CHECKS_PASSED");EditorApplication.Exit(0);}catch(Exception e){Debug.LogException(e);EditorApplication.Exit(1);}}
+ public static void Run(){try{Oracle();Frames();DiscoAtlas();FlatFlow();HueBudget();OverlappingHue();Debug.Log("OPENBRUSH_BUBBLEWAND_CHECKS_PASSED");EditorApplication.Exit(0);}catch(Exception e){Debug.LogException(e);EditorApplication.Exit(1);}}
 }

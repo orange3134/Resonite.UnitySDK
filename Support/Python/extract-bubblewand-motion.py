@@ -21,15 +21,31 @@ def extract(src,dst,reader_path):
             p,n,c,uv,t=[reader.accessor(attrs[k]) for k in ('POSITION','NORMAL','COLOR_0','_TB_UNITY_TEXCOORD_0','_TB_TIMESTAMP')]
             count=len(p)
             tangents=reader.accessor(attrs['TANGENT'])
-            if tangents.shape!=(count,4) or np.any(np.abs(np.abs(tangents[:,3])-1)>1e-5):raise ValueError('Invalid Keijiro tangent frame')
+            if tangents.shape!=(count,4) or np.any(np.abs(np.abs(tangents[:,3])-1)>1e-5):raise ValueError('Invalid BubbleWand tangent frame')
             if p.shape!=(count,3) or n.shape!=p.shape or uv.shape!=p.shape or t.shape!=p.shape or c.shape!=(count,4) or np.any(uv[:,2]<0):
                 raise ValueError('Invalid BubbleWand source channels')
+            if not all(np.isfinite(values).all() for values in (p,n,c,uv,t,tangents)):
+                raise ValueError('Invalid BubbleWand non-finite source channels')
             # Cross-sections, grouped within their own stroke, must still have
             # their original radius. Applying the pulse twice must be rejected.
             ring_groups={}
             for i in range(count):ring_groups.setdefault(tuple(np.r_[t[i,:2],uv[i,0],uv[i,2]]),[]).append(i)
             verified=[]
-            for ids in ring_groups.values():
+            # UV.x is not a unique ring ID: it can repeat within one stroke.
+            # The raw TubeBrush layout stores each ring consecutively, with
+            # UV.y running around its circumference (including the seam).
+            # Split disjoint vertex runs and UV.y wraps before fitting a radius.
+            rings=[]
+            for candidates in ring_groups.values():
+                ids=[];direction=0
+                for i in candidates:
+                    step=np.sign(uv[i,1]-uv[ids[-1],1]) if ids else 0
+                    if ids and (i!=ids[-1]+1 or (step and direction and step!=direction)):
+                        rings.append(ids);ids=[];direction=0;step=0
+                    ids.append(i)
+                    if step:direction=step
+                if ids:rings.append(ids)
+            for ids in rings:
                 radius=uv[ids[0],2]
                 if len(ids)<4 or radius<=0:continue
                 pp=p[ids]-p[ids].mean(0);nn=n[ids]-n[ids].mean(0)
