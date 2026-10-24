@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory)][string]$BundleDirectory,
     [Parameter(Mandatory)][ValidateRange(1,65535)][int]$Port,
     [string]$Name = 'Open Brush sketch',
+    [switch]$CombineMeshes,
     [string]$Position = '0,0,2',
     [string]$Unity = 'C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe'
 )
@@ -29,6 +30,7 @@ $sendArgs = @(
     '-openbrushReport', ('"{0}"' -f $reportPath)
     '-logFile', ('"{0}"' -f $logPath)
 )
+if ($CombineMeshes) { $sendArgs += '-openbrushCombineMeshes' }
 Write-Host "Bundle: $bundlePath"
 Write-Host "ResoniteLink: $Port / Model: $Name / Position: $Position"
 Write-Host "Report: $reportPath"
@@ -43,5 +45,5 @@ $result = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
 if ($sendProcess.ExitCode -ne 0 -or -not $result.completed) {
     throw "送信失敗: $($result.error)`nReport: $reportPath`nLog: $logPath"
 }
-$result | Select-Object name,completed,mode,rootId,playbackId,duration,effectLoopSeconds,growthPartCount,boundsCenter,boundsSize,bakeAdjustments
+$result | Select-Object name,completed,mode,rootId,playbackId,duration,effectLoopSeconds,growthPartCount,boundsCenter,boundsSize,bakeAdjustments,meshCombine,assetCount,preparationSeconds,sendSeconds
 Write-Host '送信完了 (completed: True)'

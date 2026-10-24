@@ -32,9 +32,10 @@ class App:
         self.source = tk.StringVar(value=self.settings['source'])
         self.port = tk.StringVar(value=self.settings['port'])
         self.animated = tk.BooleanVar(value=self.settings['animated'])
+        self.combine_meshes = tk.BooleanVar(value=self.settings['combine_meshes'])
         root.title('Open Brush → Resonite')
-        root.geometry('760x610')
-        root.minsize(700, 590)
+        root.geometry('760x650')
+        root.minsize(700, 630)
         root.configure(bg=BG)
         root.protocol('WM_DELETE_WINDOW', self.close)
         root.option_add('*Font', ('Yu Gothic UI', 11))
@@ -48,6 +49,8 @@ class App:
         style.map('Primary.TButton', background=[('active', '#0E543F'), ('disabled', '#BCCAC1')], foreground=[('disabled', '#F5F6F2')])
         style.configure('Mode.TButton', background='#E7EAE2', padding=(22, 10))
         style.map('Mode.TButton', background=[('selected', INK), ('active', '#DCE3D8')], foreground=[('selected', 'white')])
+        style.configure('TCheckbutton', background=BG, foreground=INK, padding=(0, 2))
+        style.map('TCheckbutton', foreground=[('disabled', '#8D9A92')])
         style.configure('TEntry', fieldbackground='#FFFFFF', foreground=INK, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE, padding=10)
         style.configure('Horizontal.TProgressbar', background=ACCENT, troughcolor='#E2E6DC', borderwidth=0, thickness=6)
 
@@ -81,6 +84,8 @@ class App:
         self.on = ttk.Radiobutton(modes, text='あり', variable=self.animated, value=True, style='Mode.TButton')
         self.off.grid(row=1, column=0, padx=(0, 2))
         self.on.grid(row=1, column=1)
+        self.combine_check = ttk.Checkbutton(options, text='メッシュを結合', variable=self.combine_meshes)
+        self.combine_check.grid(row=2, column=0, columnspan=2, sticky='w', pady=(14, 0))
 
         self.start_button = ttk.Button(frame, text='読み込み', style='Primary.TButton', command=self.start)
         self.start_button.grid(row=4, column=0, sticky='ew')
@@ -111,12 +116,17 @@ class App:
         self.log_button.pack(side='left')
         self.stop_button = ttk.Button(footer, text='中止', command=self.cancel, padding=(12, 5), state='disabled')
         self.stop_button.pack(side='right')
-        self.inputs = [self.file_entry, self.browse_button, self.port_entry, self.off, self.on, self.settings_button, self.start_button]
+        self.inputs = [self.file_entry, self.browse_button, self.port_entry, self.off, self.on, self.combine_check, self.settings_button, self.start_button]
+        self.animated.trace_add('write', lambda *_: self.update_combine_state())
+        self.update_combine_state()
         root.bind('<Control-o>', lambda _: self.browse() if not self.busy else None)
         root.bind('<Return>', lambda _: self.start() if not self.busy and root.focus_get() in [self.file_entry, self.port_entry, self.start_button] else None)
         self.pump_id = root.after(150, self.pump)
         self.file_entry.focus_set()
         self.file_entry.xview_moveto(1)
+
+    def update_combine_state(self):
+        self.combine_check.state(['disabled'] if self.busy or self.animated.get() else ['!disabled'])
 
     def browse(self):
         if self.busy:
@@ -127,7 +137,7 @@ class App:
             self.file_entry.xview_moveto(1)
 
     def values(self):
-        return dict(self.settings, source=self.source.get(), port=self.port.get(), animated=self.animated.get())
+        return dict(self.settings, source=self.source.get(), port=self.port.get(), animated=self.animated.get(), combine_meshes=self.combine_meshes.get())
 
     def start(self):
         if self.busy:
@@ -182,6 +192,9 @@ class App:
             report = event.get('report', {})
             adjustments = report.get('bakeAdjustments') or []
             summary = report.get('name', '')
+            combined = report.get('meshCombine')
+            if combined:
+                summary += f"\nメッシュ {combined['uniqueMeshesBefore']:,} → {combined['uniqueMeshesAfter']:,}"
             if adjustments:
                 summary += '\n一部のブラシで解像度を調整しました。詳細はログに保存しています。'
             self.detail.configure(text=summary, foreground=MUTED)
@@ -207,6 +220,7 @@ class App:
                     self.bar.configure(mode='determinate', value=100)
                 for widget in self.inputs:
                     widget.state(['!disabled'])
+                self.update_combine_state()
                 self.stop_button.state(['disabled'])
                 if self.stage not in ('done', 'error', 'cancelled'):
                     self.apply_event(dict(stage='error', detail='処理が終了しました', error='完了状態を確認できません。ログを確認してください。'))

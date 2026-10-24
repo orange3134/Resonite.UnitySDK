@@ -13,6 +13,9 @@ using UniGLTF;
 // General model entry point: no BrushTest material, stroke count or placement assumptions.
 public static class OpenBrushSendModel {
     [Serializable] public class Report {
+        public OpenBrushCompletedMeshCombine.Report meshCombine;
+        public int assetCount;
+        public double preparationSeconds,sendSeconds;
         public string name,endpoint,rootId,error,mode;public float effectLoopSeconds; public string[] assetRootIds,brushes,bakeAdjustments;
         public int rendererCount,materialCount,growthPartCount;public string playbackId;public float duration;public string reflectionSource;public float reflectionIntensity;public bool completed;public Vector3 boundsCenter,boundsSize;
     }
@@ -25,6 +28,7 @@ public static class OpenBrushSendModel {
         return args[index+1];
     }
     public static void Run() {
+        var watch=System.Diagnostics.Stopwatch.StartNew();
         LinkInterface link=null;Report report=new Report();string output=null;
         try {
             bundle=null;OpenBrushAtlasBudget.Adjustments.Clear();
@@ -68,6 +72,7 @@ public static class OpenBrushSendModel {
                 report.boundsCenter=bounds.center;report.boundsSize=bounds.size;
                 if(Has("-openbrushTimeline")) {
                     timing=JsonUtility.FromJson<OpenBrushGrowthImport.Data>(File.ReadAllText(Arg("-openbrushTimeline")));
+                    if(Has("-openbrushCombineMeshes") && !timing.completed)throw new InvalidOperationException("Mesh combining is available only for completed drawings");
                     if(timing.segments.Length!=report.rendererCount)throw new InvalidOperationException("Timeline must cover every source mesh renderer");
                     var timeline=timing.completed ? OpenBrushGrowthImport.PrepareCompleted(root,timing) : OpenBrushGrowthImport.Prepare(root,timing,disco);
                     report.mode=timing.completed ? "completed" : "animated";
@@ -113,6 +118,11 @@ public static class OpenBrushSendModel {
                 }
                 if(timing!=null && timing.completed && (root.GetComponentsInChildren<OpenBrushGrowthPart>(true).Length!=0 || root.GetComponentsInChildren<OpenBrushPlaybackButton>(true).Length!=0))
                     throw new InvalidOperationException("Completed drawing unexpectedly contains stroke playback controls or growth drivers");
+                if(Has("-openbrushCombineMeshes")) {
+                    OpenBrushImportProgress.Write("unity","完成形のメッシュを結合中");
+                    report.meshCombine=OpenBrushCompletedMeshCombine.Prepare(root,timing!=null && timing.completed);
+                }
+                report.preparationSeconds=watch.Elapsed.TotalSeconds;
                 report.bakeAdjustments=OpenBrushAtlasBudget.Adjustments.ToArray();
                 OpenBrushImportProgress.Write("send","ResoniteLinkに接続中");
                 link=new LinkInterface();var session=Task.Run(async()=>{await link.Connect(new Uri(report.endpoint),CancellationToken.None);return await link.GetSessionData();}).GetAwaiter().GetResult();
@@ -123,13 +133,18 @@ public static class OpenBrushSendModel {
                 var converter=new SceneConverter();converter.EnsureInitialized(window);converter.EnsureAssetConverter();
                 report.rootId=converter.GetTransformSlotId(root.transform);Directory.CreateDirectory(Path.GetDirectoryName(output));File.WriteAllText(output,JsonUtility.ToJson(report,true));
                 bool failed=false;Application.LogCallback errors=(m,s,t)=>{if(t==LogType.Error || t==LogType.Exception)failed=true;};
-                Action<int,int> progress=(current,total)=>OpenBrushImportProgress.Write("send","アセットを送信中",current,total);
+                Action<int,int> progress=(current,total)=>{
+                    OpenBrushImportProgress.Write("send","アセットを送信中",current,total);
+                    if(current==total)report.assetCount+=total;
+                };
+                var sendWatch=System.Diagnostics.Stopwatch.StartNew();
                 AssetConversionManager.ConversionProgress+=progress;
                 OpenBrushImportProgress.Write("send","ワールドにモデルを作成中");
                 Application.logMessageReceived+=errors;
                 try{converter.ConvertScene();}
                 finally{Application.logMessageReceived-=errors;AssetConversionManager.ConversionProgress-=progress;}
                 OpenBrushImportProgress.Write("send","送信結果を確認中");
+                report.sendSeconds=sendWatch.Elapsed.TotalSeconds;
                 report.assetRootIds=UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects().Where(g=>g!=root).Select(g=>converter.GetTransformSlotId(g.transform)).ToArray();
                 report.materialCount=UnityEngine.Object.FindObjectsOfType<OpenBrushMaterialConverter>().Length;
                 var playback=root.GetComponent<OpenBrushTimelineConverter>();

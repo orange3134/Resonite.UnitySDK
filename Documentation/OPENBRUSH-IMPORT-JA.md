@@ -212,9 +212,18 @@ SDK送信はワールド全体の空・ライトを自動で置き換えませ�
 
 | 引数 | 用途と制約 |
 | --- | --- |
+| `-openbrushCombineMeshes` | 完成形モード専用。同じマテリアルの静的な不透明メッシュを近傍ごとに結合。透明・動的・特殊な視線依存表現は除外。元のストローク単位の編集はできなくなる。書き順ありではエラー。 |
 | `-openbrushDiamondFilm` | DiamondHull/Membraneの薄膜色変化。標準の簡易透明材質から変更。斜め・裏側の見え方、反射、色勾配に制約。 |
 | `-openbrushExperimentalNeonMatcap` | NeonPulseの角度依存表現の試験版。標準Fresnelと異なる近似で、光の芯を改善。視線と反射の差が残る。 |
 | `-openbrushPrintingShadows` | 3D Printing Brush同士の影の試験ベイク。境界に筋が出ることがあり、他ブラシからの遮蔽は含まない。 |
+
+完成形の結合は、`--completed` で準備したbundleに対し、送信時に指定します。準備コマンドには結合フラグを付けません。
+
+```powershell
+& ./Support/send-openbrush-bundle.ps1 -BundleDirectory $bundleDir -Port 12575 -Name 'MySketch completed' -CombineMeshes
+```
+
+ポートは対象ワールドの番号に置き換えてください。Unityを直接起動する場合は `$unityArgs += '-openbrushCombineMeshes'` を起動前に追加します。省略時は従来の分割状態を維持します。結合の範囲と制約は[アプリ手順書](OPENBRUSH-APP-JA.md#メッシュを結合)を参照してください。
 
 例えばDiamondの試験版は、`Start-Process` の前に `$unityArgs += '-openbrushDiamondFilm'` を挿入します。比較用にモデル名を変えて送ると結果を見比べられます。
 

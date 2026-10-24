@@ -78,6 +78,26 @@ class DesktopTests(unittest.TestCase):
         self.assertIn('接続', self.ui.detail['text'])
         self.assertTrue(self.ui.start_button.instate(['!disabled']))
 
+    def test_combining_is_opt_in_and_only_enabled_for_completed_mode(self):
+        self.assertFalse(self.ui.combine_meshes.get())
+        self.ui.combine_check.invoke()
+        self.assertTrue(self.ui.combine_meshes.get())
+        self.ui.on.invoke()
+        self.assertTrue(self.ui.combine_check.instate(['disabled']))
+        self.ui.off.invoke()
+        self.assertTrue(self.ui.combine_check.instate(['!disabled']))
+        self.outcome['report']['meshCombine'] = dict(uniqueMeshesBefore=100, uniqueMeshesAfter=12)
+        self.ui.start_button.invoke()
+        self.wait(lambda: self.ui.stage=='send')
+        self.assertTrue(self.ui.combine_check.instate(['disabled']))
+        self.assertTrue(self.used_settings['combine_meshes'])
+        self.assertFalse(self.used_settings['animated'])
+        self.release.set()
+        self.wait(lambda: not self.ui.busy)
+        self.assertTrue(self.ui.combine_check.instate(['!disabled']))
+        self.assertIn('100 → 12', self.ui.detail['text'])
+        self.assertTrue(backend.read_settings(self.sdk)['combine_meshes'])
+
     def test_file_picker_and_bad_port_do_not_launch(self):
         with mock.patch.object(app.filedialog, 'askopenfilename', return_value='C:/新しい絵.glb'):
             self.ui.browse_button.invoke()

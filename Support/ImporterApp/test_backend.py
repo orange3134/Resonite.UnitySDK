@@ -32,6 +32,9 @@ class PipelineTests(unittest.TestCase):
         command = backend.send_command(Path('C:/Unity.exe'), self.root, self.root / 'bundle', 12575, '作品 & test', self.root/'report.json', self.root/'log', self.root/'progress')
         self.assertEqual(command[command.index('-openbrushName')+1], '作品 & test')
         self.assertNotIn('-nographics', command)
+        self.assertNotIn('-openbrushCombineMeshes', command)
+        combined = backend.send_command(Path('C:/Unity.exe'), self.root, self.root / 'bundle', 12575, 'fixture', self.root/'report.json', self.root/'log', self.root/'progress', combine_meshes=True)
+        self.assertIn('-openbrushCombineMeshes', combined)
 
     def test_incremental_progress_handles_split_unicode_and_invalid_lines(self):
         path = self.root / 'progress'

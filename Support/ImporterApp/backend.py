@@ -30,7 +30,7 @@ class Cancelled(Exception):
 
 def defaults(sdk=SDK):
     version = (sdk / 'ProjectSettings/ProjectVersion.txt').read_text(encoding='utf-8').splitlines()[0].split(':', 1)[1].strip()
-    return dict(source='', port='', animated=False,
+    return dict(source='', port='', animated=False, combine_meshes=False,
                 unity=str(Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Unity/Hub/Editor' / version / 'Editor/Unity.exe'),
                 brushes=str(sdk.parent / 'Builds/OpenXR_Release_OpenBrush/Support/shaders/brushes'))
 
@@ -169,10 +169,13 @@ def prepare_command(python, sdk, source, bundle, brushes, animated):
     return command
 
 
-def send_command(unity, sdk, bundle, port, name, report, log, progress):
-    return [str(unity), '-batchmode', '-projectPath', str(sdk), '-executeMethod', 'OpenBrushSendModel.Run',
+def send_command(unity, sdk, bundle, port, name, report, log, progress, combine_meshes=False):
+    command = [str(unity), '-batchmode', '-projectPath', str(sdk), '-executeMethod', 'OpenBrushSendModel.Run',
             '-openbrushBundle', str(bundle / 'bundle.json'), '-openbrushPort', str(port), '-openbrushName', name,
             '-openbrushPosition', '0,0,2', '-openbrushReport', str(report), '-openbrushProgress', str(progress), '-logFile', str(log)]
+    if combine_meshes:
+        command.append('-openbrushCombineMeshes')
+    return command
 
 
 def require_report(path, code):
@@ -257,7 +260,8 @@ class Pipeline:
                     raise ImportFailure('変換後のbundle.jsonがありません。')
                 self.emit(dict(stage='unity', detail='Unityを起動中'))
                 code = self.run_child(send_command(unity, self.sdk, bundle, port, source.stem + ' ' + mode,
-                                                   self.report_path, self.run_dir / 'unity.log', self.run_dir / 'progress.jsonl'),
+                                                   self.report_path, self.run_dir / 'unity.log', self.run_dir / 'progress.jsonl',
+                                                   combine_meshes=bool(settings.get('combine_meshes')) and not settings['animated']),
                                       self.run_dir / 'unity-process.log', self.run_dir / 'progress.jsonl')
                 result = require_report(self.report_path, code)
                 self.emit(dict(stage='done', detail='読み込み完了', report=result, run_dir=str(self.run_dir), bundle=str(bundle)))
