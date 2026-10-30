@@ -1,6 +1,8 @@
 # Open Brush → Resonite アプリ
 
-SDKフォルダーの **OpenBrush Importer.exe** をダブルクリックして起動します。
+クローン後はSDK直下の **Start-OpenBrush-Importer.cmd** をダブルクリックしてください。必要な環境を確認・準備してGUIを起動します。2回目以降も同じファイルを使えます。詳しい初回手順は[別PCのセットアップ](OPENBRUSH-SETUP-JA.md)を参照してください。
+
+セットアップ後に生成される **OpenBrush Importer.exe** からも起動できます。こちらは環境確認を省略してGUIを直接起動します。
 
 1. **選択…** からOpen Brushで書き出したGLBを選びます。
 2. 対象ワールドのResoniteLinkに表示されている**ポート番号**を入力します。
@@ -42,7 +44,7 @@ SDKフォルダーの **OpenBrush Importer.exe** をダブルクリックして�
 
 ## 初回設定
 
-既存のカスタムSDK、Unity 2022.3.62f3、`.venv-openbrush` を使います。追加のGUI用ライブラリは必要ありません。このexeはSDK内のPythonアプリを起動するランチャーです。exe単体を別の場所へ移動せず、SDKフォルダーと一緒に使用してください。
+起動ファイルがカスタムSDKに必要なUnity 2022.3.62f3、Pythonと`.venv-openbrush`を確認します。既存の対応環境を再利用し、不足分を準備します。追加のGUI用ライブラリは必要ありません。このexeはSDK内のPythonアプリを起動するランチャーです。exe単体を別の場所へ移動せず、SDKフォルダーと一緒に使用してください。
 
 右上の**設定**で次を変更できます。
 

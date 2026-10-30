@@ -1,10 +1,10 @@
 # Open Brush のスケッチを Resonite に取り込む手順
 
-GUIから一括で読み込む場合は [アプリの手順](OPENBRUSH-APP-JA.md) を参照してください。
+クローン直後は **Start-OpenBrush-Importer.cmd** で初回セットアップとGUI起動を行えます。[別PCのセットアップ](OPENBRUSH-SETUP-JA.md)と[アプリの手順](OPENBRUSH-APP-JA.md)を参照してください。以下は手動でCLIを使う場合の手順です。
 
 更新日 2026年10月10日。この手順は `resonite-unity-sdk-openbrush` に追加したカスタム変換機能用です。ブラシの色と見た目を変換し、筆先を追うように線が伸びる書き順アニメーションと再生ボタンをResoniteに送信します。`--completed` を付けると、書き順再生なしで完成形だけを読み込めます。
 
-作業は **Open BrushでGLBを書き出す → Pythonで変換用フォルダーを作る → Unity SDKからResoniteへ送る** の3段階です。`.tilt` をSDKへ直接渡す機能や専用GUIはまだありません。任意のスケッチを選べますが、[ブラシ対応表](OPENBRUSH-BRUSH-SUPPORT-JA.md)に記載した入力条件と制約があります。
+作業は **Open BrushでGLBを書き出す → Pythonで変換用フォルダーを作る → Unity SDKからResoniteへ送る** の3段階です。`.tilt` をSDKへ直接渡す機能はありません。専用GUIでは以下の変換と送信をまとめて実行できます。任意のスケッチを選べますが、[ブラシ対応表](OPENBRUSH-BRUSH-SUPPORT-JA.md)に記載した入力条件と制約があります。
 
 ## 事前に用意するもの
 

@@ -1,3 +1,9 @@
+## Open Brush インポーター（このカスタムブランチ）
+
+Windowsでクローンした後、**Start-OpenBrush-Importer.cmd** を実行すると、既存環境の検出・不足分のセットアップ・GUI起動まで進みます。Unityのログイン／ライセンス認証やWindowsの管理者確認が出た場合は画面に従ってください。
+
+[初回セットアップ](Documentation/OPENBRUSH-SETUP-JA.md) · [GUIの使い方](Documentation/OPENBRUSH-APP-JA.md) · [ブラシ対応表](Documentation/OPENBRUSH-BRUSH-SUPPORT-JA.md)
+
 Resonite SDK for the Unity Editor. This will allow sending content from Unity Editor to Resonite easily. Built on top of ResoniteLink: https://github.com/Yellow-Dog-Man/ResoniteLink
 
 > [!CAUTION]
